@@ -1,0 +1,11 @@
+(whydoyouloveme
+   (upgrade_version 1)
+   (midi_file "songs_upgrades/whydoyouloveme_plus.mid")
+   (song_id 1005057)
+)
+(whydontyouloveme
+   (upgrade_version 2)
+   (midi_file "songs_upgrades/whydontyouloveme_plus.mid")
+   (song_id 1005058)
+)
+

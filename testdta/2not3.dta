@@ -1,0 +1,250 @@
+(bluemonday
+   (name "Blue Monday")
+   (artist "New Order")
+   (master TRUE)  
+   
+   (song_id 1010028)          ; ALWAYS set this to 0, unless you are Heather 
+   
+   (song
+     (name        "songs/bluemonday/bluemonday")
+     (tracks
+        ((drum (0 1 2 3 4 5))
+         (bass (6 7))
+         (guitar (8 9))
+         (vocals (10 11))
+         (keys (12 13))
+        )
+     )
+
+     ;;(crowd_channels 12 13)       ; OPTIONAL but REQUIRED for crowd audio
+     (vocal_parts 1)    ; OPTIONAL but REQUIRED for vocal harmony
+     
+     ;                   K         SN        CYMBALS     BASS      GUITAR     VOCALS       KEYS     TRACKS   
+     (pans        ( -1.0  1.0  -1.0  1.0   -1.0  1.0  -1.0  1.0  -1.0  1.0  -1.0  1.0  -1.0  1.0   -1.0  1.0  ))
+     (vols        ( -4.0 -4.0  -4.0 -4.0   -4.0 -4.0  -4.0 -4.0  -4.0 -4.0  -4.0 -4.0  -4.0 -4.0   -4.5 -4.5  ))
+     (cores       (  -1   -1    -1   -1     -1   -1    -1    -1     1    1    -1   -1    -1   -1    -1   -1  ))
+    
+    (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     
+     ;;(mute_volume ^^^-96.0^^^)         ; OPTIONAL 
+     ;;(mute_volume_vocals ^^^-12.0^^^)  ; OPTIONAL
+     ;;(hopo_threshold ^^^100^^^)        ; OPTIONAL
+   )
+   
+   (bank sfx/handclap_bank.milo)
+   ;;(drum_bank sfx/^^^kit01_bank.milo^^^)  ; OPTIONAL (kit01_bank.milo is default if not specified)
+   (anim_tempo kTempoMedium)
+   (band_fail_cue band_fail_electro_keys.cue)       ; OPTIONAL
+   (song_scroll_speed 2300)
+   (preview 130000 160000)
+   (song_length 452102)             
+   
+   (rank
+      (drum 296)
+      (guitar 125)
+      (bass 230)
+      (vocals 140)
+      (keys 180)
+      (real_guitar 0)
+      (real_bass 0)
+      (real_keys 172)
+      (band 205)
+   )
+   
+   (solo (vocal_percussion))
+
+   (format 10)
+   (version 30)
+   (game_origin rb3_dlc)
+   (rating 2)     ; 1 = everyone, 2 = teen, 3 = mature, 4 = unrated
+   (genre new_wave) 
+   (vocal_gender male)
+   (short_version 161500)    ; OPTIONAL - if set to 0, there is no short version of the song (milliseconds)
+   
+   (year_released 1983)
+   ;;(year_recorded ^^^2008^^^)  ; OPTIONAL - only to be used for re-records
+
+   (album_art TRUE)                     
+   (album_name "Blue Monday")           ; OPTIONAL
+   (album_track_number 1)                     ; REQUIRED if album_name is set
+
+   (vocal_tonic_note 2)      ; VOX team - set this to correct note!
+   (song_tonality 1)           ; REQUIRED - VOX team - 0 = major, 1 = minor
+   ;;(song_key ^^^11^^^)                 ; OPTIONAL - VOX team - trainer key override for vocal_tonic_Note
+   ;;(tuning_offset_cents ^^^0^^^)       ; OPTIONAL
+   ;;(guide_pitch_volume ^^^-3.0^^^)     ; OPTIONAL
+   ;;(real_guitar_tuning (0 0 0 0 0 0))    ; REQUIRED if real_guitar rank > 0
+   ;;(real_bass_tuning (0 0 0 0))          ; REQUIRED if real_bass rank > 0
+)
+(burningdownthehouse
+   (name "Burning Down the House")
+   (artist "Talking Heads")
+   (master TRUE)  
+   
+   (song_id 1010047)          ; get song_id from ...prj\band3\doc\RB3_SongIDs.xls
+   
+   (song
+     (name        "songs/burningdownthehouse/burningdownthehouse")
+     (tracks
+        ((drum (0 1 2 3 4))
+         (bass 5)
+         (guitar (6 7))
+         (vocals (8 9))
+         (keys (10 11))
+        )
+     )
+
+     ;;(crowd_channels ^^ ^^)       ; OPTIONAL but REQUIRED only for crowd sing-a-long
+     (vocal_parts 2)    ; OPTIONAL but REQUIRED for vocal harmony
+     
+     ;                K        SN       CYMBALS    BS     GUITAR     VOCALS      KEYS      TRACKS  
+     (pans        (  0.0   -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -0.1   -2.0 -2.0   -1.0 -1.0  -3.5  -9.5 -9.5  -8.5 -8.5  -6.0 -6.0  -4.5 -4.5 ))
+     (cores       (  -1     -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1    -1   -1  ))
+    
+    (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     
+     ;;(mute_volume ^^^-96.0^^^)         ; OPTIONAL 
+     ;;(mute_volume_vocals ^^^-12.0^^^)  ; OPTIONAL
+     ;;(hopo_threshold ^^^100^^^)        ; OPTIONAL
+   )
+   
+   (bank sfx/tambourine_bank.milo)
+   (drum_bank sfx/kit02_bank.milo)   ; OPTIONAL (kit01_bank.milo is default if not specified)
+   (anim_tempo kTempoMedium)
+   (band_fail_cue band_fail_electro_keys.cue)       ; OPTIONAL
+   (song_scroll_speed 2300)
+   (preview 47368 77368)
+   (song_length 261332)             
+   
+   (rank
+      (drum 241)
+      (guitar 210)
+      (bass 158)
+      (vocals 212)
+      (keys 281)
+      (real_guitar 0)
+      (real_bass 0)
+      (real_keys 342)
+      (band 251)
+   )
+
+   (solo (drum))
+
+   (format 10)
+   (version 30)
+   (game_origin rb3_dlc)
+   (rating 2)     ; 1 = everyone, 2 = teen, 3 = mature, 4 = unrated
+   (genre new_wave) 
+   (vocal_gender male)
+   ;;(short_version 79627)    ; OPTIONAL - if set to 0, there is no short version of the song (milliseconds)
+   
+   (year_released 1983)
+   ;;(year_recorded ^^^2008^^^)  ; OPTIONAL - only to be used for re-records
+
+   (album_art TRUE)                     ; OPTIONAL - defaults to false if it does not exist
+   (album_name "Speaking in Tongues")           ; OPTIONAL
+   (album_track_number 1)                     ; OPTIONAL - cannot exist without album_name
+
+   (vocal_tonic_note 7)                 ; REQUIRED - VOX team - set this to correct note!
+   (song_tonality 0)           ; REQUIRED - VOX team - 0 = major, 1 = minor
+   ;;(song_key ^^^11^^^)                 ; OPTIONAL - VOX team - trainer key override for vocal_tonic_Note
+   ;;(tuning_offset_cents ^^^0^^^)       ; OPTIONAL
+   ;;(guide_pitch_volume ^^^-3.0^^^)     ; OPTIONAL
+   ;;(real_guitar_tuning (0 0 0 0 0 0))    ; REQUIRED if real_guitar rank > 0
+   ;;(real_bass_tuning (0 0 0 0))          ; REQUIRED if real_bass rank > 0
+)
+(myownsummer
+   (name "My Own Summer (Shove It)")
+   (artist "Deftones")
+   (master TRUE)  
+   
+   (song_id 1010049)          ; get song_id from ...prj\band3\doc\RB3_SongIDs.xls
+   
+   (song
+     (name        "songs/myownsummer/myownsummer")
+     (tracks
+        ((drum (0 1 2 3 4))
+         (bass 5)
+         (guitar (6 7))
+         (vocals (8 9))
+        )
+     )
+
+     ;;(crowd_channels ^^ ^^)       ; OPTIONAL but REQUIRED only for crowd sing-a-long
+     (vocal_parts 2)
+     
+     ;                K        SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS  
+     (pans        (  0.0   -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -0.5   -3.5 -3.5   -3.5 -3.5  -1.0  -3.0 -3.0  -3.2 -3.2  -3.5 -3.5 ))
+     (cores       (  -1     -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+    
+    (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     
+     ;;(mute_volume ^^^-96.0^^^)         ; OPTIONAL 
+     ;;(mute_volume_vocals ^^^-12.0^^^)  ; OPTIONAL
+     ;;(hopo_threshold ^^^100^^^)        ; OPTIONAL
+   )
+   
+   (bank sfx/tambourine_bank.milo)
+   (drum_bank sfx/kit04_bank.milo)  ; OPTIONAL (kit01_bank.milo is default if not specified)
+   (anim_tempo kTempoMedium)
+   (band_fail_cue band_fail_heavy.cue)         ; OPTIONAL
+   (song_scroll_speed 2300)
+   (preview 60181 90181)
+   (song_length 219847)             
+   
+   
+   ;;; IMPORTANT
+   ;;; MAKE SURE THAT EVERY NUMBER HERE IS UNIQUE COMPARED TO OTHER NUMBERS FOR IMPLEMENTED SONGS!
+   ;;; Otherwise, you'll break the Music Library tiering support, which will then break Tour, which will make people mad
+   (rank
+      (drum 183)
+      (guitar 263)
+      (bass 303)
+      (vocals 182)
+      (keys 000)
+      (real_guitar 290)
+      (real_bass 420)
+      (real_keys 000)
+      (band 223)
+   )
+   
+   (format 10)
+   (version 30)
+   (game_origin rb3_dlc)
+   (rating 2)     ; 1 = everyone, 2 = teen, 3 = mature, 4 = unrated
+   (genre metal)
+   (vocal_gender male)
+   (short_version 107852)    ; OPTIONAL - if set to 0, there is no short version of the song (milliseconds)
+   
+   (year_released 1997)
+   ;;(year_recorded ^^^2008^^^)  ; OPTIONAL - only to be used for re-records
+
+   (album_art TRUE)                     ; OPTIONAL - defaults to false if it does not exist
+   (album_name "Around the Fur")           ; OPTIONAL
+   (album_track_number 1)                     ; OPTIONAL - cannot exist without album_name
+
+   (vocal_tonic_note 1)
+   (song_tonality 1)           ; REQUIRED - VOX team - 0 = major, 1 = minor
+   ;;(song_key ^^^11^^^)                 ; OPTIONAL - VOX team - trainer key override for vocal_tonic_Note
+   ;;(tuning_offset_cents ^^^0^^^)       ; OPTIONAL
+   ;;(guide_pitch_volume ^^^-3.0^^^)     ; OPTIONAL
+   ;;(real_guitar_tuning (-3 -1 -1 -1 -1 -1))    ; REQUIRED if real_guitar rank > 0
+   ;;(real_bass_tuning (-3 -1 -1 -1))          ; REQUIRED if real_bass rank > 0
+)

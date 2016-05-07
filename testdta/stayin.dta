@@ -1,0 +1,85 @@
+(stayinalive
+   (name "Stayin' Alive")
+   (artist "Bee Gees")
+   (master TRUE)  
+   
+   (song_id 1010036)          ; get song_id from ...prj\band3\doc\RB3_SongIDs.xls
+   
+   (song
+     (name        "songs/stayinalive/stayinalive")
+     (tracks
+        ((drum (0 1))
+         (bass (2 3))
+         (guitar (4 5))
+         (vocals (6 7))
+         (keys (8 9))
+        )
+     )
+
+     ;;(crowd_channels ^^ ^^)       ; OPTIONAL but REQUIRED only for crowd sing-a-long
+     (vocal_parts 3)
+     
+     ;                DRUMS        BASS      GUITAR       VOCALS      KEYS        TRACKS  
+     (pans        ( -1.0  1.0   -1.0  1.0   -1.0  1.0   -1.0  1.0   -1.0  1.0   -1.0  1.0 ))
+     (vols        ( -5.0 -5.0  -11.0 -11.0  -8.0 -8.0   -8.4 -8.4   -9.0 -9.0  -11.0 -11.0))
+     (cores       (   -1   -1    -1   -1      1    1     -1   -1     -1   -1     -1   -1  ))
+    
+    (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     
+     ;;(mute_volume ^^^-96.0^^^)         ; OPTIONAL 
+     ;;(mute_volume_vocals ^^^-12.0^^^)  ; OPTIONAL
+     ;;(hopo_threshold ^^^100^^^)        ; OPTIONAL
+   )
+   
+   (bank sfx/tambourine_bank.milo)
+   ;;(drum_bank sfx/^^^kit01_bank.milo^^^)  ; OPTIONAL (kit01_bank.milo is default if not specified)
+   (anim_tempo kTempoMedium)
+   (band_fail_cue band_fail_vintage_keys.cue)         ; OPTIONAL
+   (song_scroll_speed 2300)
+   (preview 37000 65000)
+   (song_length 292063)             
+   
+   
+   ;;; IMPORTANT
+   ;;; MAKE SURE THAT EVERY NUMBER HERE IS UNIQUE COMPARED TO OTHER NUMBERS FOR IMPLEMENTED SONGS!
+   ;;; Otherwise, you'll break the Music Library tiering support, which will then break Tour, which will make people mad
+   (rank
+      (drum 161)
+	  (guitar 200)
+      (bass 200)
+      (vocals 262)
+      (keys 262)
+      (real_guitar 0)
+      (real_bass 0)
+      (real_keys 322)
+      (band 281)
+   )
+   
+   (format 10)
+   (version 30)
+   (game_origin rb3_dlc)
+   (rating 1)     ; 1 = everyone, 2 = teen, 3 = mature, 4 = unrated
+   (genre other) 
+   (vocal_gender male)
+   (short_version 111243)    ; OPTIONAL - if set to 0, there is no short version of the song (milliseconds)
+   
+   (year_released 1977)
+   ;;(year_recorded ^^^2008^^^)  ; OPTIONAL - only to be used for re-records
+
+   (album_art TRUE)                     ; OPTIONAL - defaults to false if it does not exist
+   (album_name "Saturday Night Fever: The Original Movie Sound Track")           ; OPTIONAL
+   (album_track_number 1)                     ; OPTIONAL - cannot exist without album_name
+
+   (vocal_tonic_note 5)
+   (song_tonality 1)           ; REQUIRED - VOX team - 0 = major, 1 = minor
+   ;(song_key ^^^11^^^)                 ; OPTIONAL - VOX team - trainer key override for vocal_tonic_Note
+   (tuning_offset_cents 35)
+   ;;(guide_pitch_volume ^^^-3.0^^^)     ; OPTIONAL
+   ;;(real_guitar_tuning (0 0 0 0 0 0))    ; REQUIRED if real_guitar rank > 0
+   ;;(real_bass_tuning (0 0 0 0))          ; REQUIRED if real_bass rank > 0
+)

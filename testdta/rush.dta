@@ -1,0 +1,377 @@
+(tomsawyer2
+   (name "Tom Sawyer (Original Version)")
+   (artist "Rush")
+   (master TRUE)
+   (context 359)
+   (song
+     (name        songs/tomsawyer2/tomsawyer2)
+     (tracks
+        ((drum (0 1))
+         (bass 2)
+         (guitar (3 4))
+         (vocals (5 6))
+        )
+     )
+     ;                 DRMS     BS     GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -3.0 -3.0  -1.5  -2.5 -2.5  -5.0 -5.0  -2.5 -2.5 ))
+     (cores       (  -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/tomsawyer2/tomsawyer2.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 9900 43300)
+   (rank
+      (drum 358)
+      (guitar 252)
+      (bass 225)
+      (vocals 157)
+      (band 248)
+   )
+   (genre prog)
+   (decade the80s)
+   (downloaded TRUE)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) 
+   (year_released 1981)
+   (album_name "Moving Pictures")
+   (album_track_number 1)
+   (base_points 266456)
+)
+
+(redbarchetta
+   (name "Red Barchetta")
+   (artist "Rush")
+   (master TRUE)
+   (context 360)
+   (song
+     (name        songs/redbarchetta/redbarchetta)
+     (tracks
+        ((drum (0 1))
+         (bass (2 3))
+         (guitar (4 5))
+         (vocals (6 7))
+        )
+     )
+     ;                    DMS         BS       GUITAR     VOCALS     TRACKS
+     (pans        (   -1.0  1.0   -1.0  1.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        (   -2.0 -2.0   -5.0 -5.0  -3.5 -3.5  -4.0 -4.0  -6.0 -6.0 ))
+     (cores       (   -1    -1     -1   -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/redbarchetta/redbarchetta.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/cowbell3_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 65425 94763)
+   (rank
+      (drum 380)
+      (guitar 228)
+      (bass 199)
+      (vocals 190)
+      (band 250)
+   )
+   (genre prog)
+   (decade the80s)
+   (downloaded TRUE)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) 
+   (year_released 1981)
+   (album_name "Moving Pictures") 
+   (album_track_number 2)  
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   (base_points 332505)
+)
+
+(limelight2
+   (name "Limelight (Original Version)")
+   (artist "Rush")
+   (master TRUE)
+   (context 362)
+   (song
+     (name        songs/limelight2/limelight2)
+     (tracks
+        ((drum (0 1))
+         (bass 2)
+         (guitar (3 4))
+         (vocals (5 6))
+        )
+     )
+     ;                DRUMS      BS    GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0 -1.0  -1.3  -3.0 -3.0  -3.0 -3.0  -4.0 -4.0 ))
+     (cores       (  -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/limelight2/limelight2.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 28131 58131)
+   (rank
+      (drum 335)
+      (guitar 206)
+      (bass 198)
+      (vocals 138)
+      (band 220)
+   )
+   (genre prog)
+   (decade the80s)
+   (downloaded TRUE)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) 
+   (year_released 1981)
+   (album_name "Moving Pictures")
+   (album_track_number 4) 
+   (base_points 273164)
+)
+
+(yyz
+   (name "YYZ")
+   (artist "Rush")
+   (master TRUE)
+   (context 361)
+   (song
+     (name        songs/yyz/yyz)
+     (tracks
+        ((drum (0 1))
+         (bass (2 3))
+         (guitar (4 5))
+        )
+     )
+     ;                DRUMS      BASS      GUITAR      TRACKS 
+     (pans        ( -1.0  1.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0 -1.0  -3.0 -3.0  -3.0 -3.0  -3.0 -3.0 ))
+     (cores       (  -1   -1    -1   -1     1    1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/yyz/yyz.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 60776 90776)
+   (rank
+      (drum 405)
+      (guitar 320)
+      (bass 336)
+      (vocals 0)
+      (band 350)
+   )
+   (genre prog)
+   (decade the80s)
+   (downloaded TRUE)
+   (vocal_gender male)  ;; do we comment this out for instrumentals??
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE)
+   (year_released 1981)
+   (album_name "Moving Pictures")
+   (album_track_number 3) 
+   (base_points 451441)
+)
+
+(cameraeye
+   (name "The Camera Eye")
+   (artist "Rush")
+   (master TRUE)
+   (context 363)
+   (song
+     (name        songs/cameraeye/cameraeye)
+     (tracks
+        ((drum (0 1))
+         (bass 2)
+         (guitar (3 4))
+         (vocals (5 6))
+        )
+     )
+     ;                    DMS       BS    GUITAR     VOCALS     TRACKS
+     (pans        (   -1.0  1.0    0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        (   -1.0 -1.0   -1.0  -3.0 -3.0  -4.2 -4.2  -3.5 -3.5 ))
+     (cores       (   -1    -1     -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/cameraeye/cameraeye.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/cowbell3_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 335000 365000)
+   (rank
+      (drum 353)
+      (guitar 268)
+      (bass 150)
+      (vocals 155)
+      (band 230)
+   )
+   (genre prog)
+   (decade the80s)
+   (downloaded TRUE)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) 
+   (year_released 1981)
+   (album_name "Moving Pictures")
+   (album_track_number 5) 
+   (base_points 491392)
+)
+
+(witchhunt
+   (name "Witch Hunt (Part III of Fear)")
+   (artist "Rush")
+   (master TRUE)
+   (context 364)
+   (song
+     (name        songs/witchhunt/witchhunt)
+     (tracks
+        ((drum (0 1))
+         (bass 2)
+         (guitar (3 4))
+         (vocals (5 6))
+        )
+     )
+     ;                    DMS       BS     GUITAR     VOCALS     TRACKS
+     (pans        (   -1.0  1.0    0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        (   -0.5 -0.5   -3.5  -4.5 -4.5  -4.5 -4.5  -2.5 -2.5 ))
+     (cores       (   -1    -1     -1    1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/witchhunt/witchhunt.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 156528 179169)
+   (rank
+      (drum 301)
+      (guitar 205)
+      (bass 120)
+      (vocals 152)
+      (band 194)
+   )
+   (genre prog)
+   (decade the80s)
+   (downloaded TRUE)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1981)
+   (album_name "Moving Pictures")
+   (album_track_number 6)
+   (base_points 181562)
+)
+
+(vitalsigns
+   (name "Vital Signs")
+   (artist "Rush")
+   (master TRUE)
+   (context 365)
+   (song
+     (name        songs/vitalsigns/vitalsigns)
+     (tracks
+        ((drum (0 1))
+         (bass (2 3))
+         (guitar (4 5))
+         (vocals (6 7))
+        )
+     )
+     ;                DRUMS       BASS      GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0  -1.0  1.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -0.5 -0.5  -3.5 -3.5  -4.0 -4.0  -3.5 -3.5  -3.0 -3.0 ))
+     (cores       (  -1   -1    -1    -1    1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/vitalsigns/vitalsigns.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 147969 177969)
+   (rank
+      (drum 372)
+      (guitar 204)
+      (bass 251)
+      (vocals 131)
+      (band 240)
+   )
+   (genre prog)
+   (decade the80s)
+   (downloaded TRUE)
+   (vocal_gender male)  
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) 
+   (year_released 1981)
+   (album_name "Moving Pictures") 
+   (album_track_number 7)
+   (base_points 283106)
+)
