@@ -1,0 +1,871 @@
+(apacherosepeacock
+   (name "Apache Rose Peacock")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 407)
+   (song
+     (name        songs/apacherosepeacock/apacherosepeacock)
+     (tracks
+        ((drum (0 1 2 3 4 5))
+         (bass 6)
+         (guitar (7 8))
+         (vocals (9 10))
+        )
+     )
+     ;                  K          SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0  -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.2 -1.2  -1.7 -1.7   -3.0 -3.0  -4.0  -2.5 -2.5  -0.6 -0.6  -3.5 -3.5 ))
+     (cores       (  -1   -1    -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/apacherosepeacock/apacherosepeacock.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 81269 110986)
+   (rank
+      (drum 124)
+      (guitar 240)
+      (bass 250)
+      (vocals 270)
+      (band 207)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 13)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 699278)
+)
+
+(bloodsugarsexmagik
+   (name "Blood Sugar Sex Magik")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 404)
+   (song
+     (name        songs/bloodsugarsexmagik/bloodsugarsexmagik)
+     (tracks
+        ((drum (0 1 2 3 4 5))
+         (bass 6)
+         (guitar (7 8))
+         (vocals (9 10))
+        )
+     )
+     ;                  K          SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0  -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0 -1.0  -1.2 -1.2   -3.0 -3.0  -1.5  -3.6 -3.6  -1.8 -1.8  -4.5 -4.5 ))
+     (cores       (  -1   -1    -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/bloodsugarsexmagik/bloodsugarsexmagik.mid)
+     (hopo_threshold 90)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 65238 93946)
+   (rank
+      (drum 170)
+      (guitar 255)
+      (bass 285)
+      (vocals 190)
+      (band 231)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 10)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 620463)
+)
+
+(breakingthegirl
+   (name "Breaking the Girl")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 398)
+   (song
+     (name        songs/breakingthegirl/breakingthegirl)
+     (tracks
+        ((drum (0 1 2 3 4 5))
+         (bass 6)
+         (guitar (7 8))
+         (vocals (9 10))
+        )
+     )
+     ;                  K          SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0  -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0 -1.0  -2.0 -2.0   -3.5 -3.5  -3.7  -2.8 -2.8  -2.5 -2.5  -3.0 -3.0 ))
+     (cores       (  -1   -1    -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/breakingthegirl/breakingthegirl.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 61549 89783)
+   (rank
+      (drum 242)
+      (guitar 245)
+      (bass 255)
+      (vocals 130)
+      (band 212)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 3)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 613422)
+)
+
+(funkymonks
+   (name "Funky Monks")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 399)
+   (song
+     (name        songs/funkymonks/funkymonks)
+     (tracks
+        ((drum (0 1 2))
+         (bass 3)
+         (guitar (4 5))
+         (vocals (6 7))
+        )
+     )
+     ;                K      SN/CYM    BS     GUITAR     VOCALS     TRACKS
+     (pans        (  0.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0   -2.0 -2.0  -2.3  -3.0 -3.0  -4.0 -4.0  -3.4 -3.4 ))
+     (cores       (  -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/funkymonks/funkymonks.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 22000 51800)
+   (rank
+      (drum 174)
+      (guitar 256)
+      (bass 280)
+      (vocals 220)
+      (band 235)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 4)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 537591)
+)
+
+(icouldhavelied
+   (name "I Could Have Lied")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 401)
+   (song
+     (name        songs/icouldhavelied/icouldhavelied)
+     (tracks
+        ((drum (0 1 2 3 4 5))
+         (bass 6)
+         (guitar (7 8))
+         (vocals (9 10))
+        )
+     )
+     ;                  K          SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0  -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0 -1.0  -2.0 -2.0   -3.0 -3.0  -4.0  -1.5 -1.5  -1.5 -1.5  -3.0 -3.0 ))
+     (cores       (  -1   -1    -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/icouldhavelied/icouldhavelied.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 48269 77656)
+   (rank
+      (drum 105)
+      (guitar 107)
+      (bass 107)
+      (vocals 117)
+      (band 110)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 6)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 320405)
+)
+
+(mellowshipslinkyinbmajor
+   (name "Mellowship Slinky in B Major")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 402)
+   (song
+     (name        songs/mellowshipslinkyinbmajor/mellowshipslinkyinbmajor)
+     (tracks
+        ((drum (0 1 2 3 4 5))
+         (bass 6)
+         (guitar (7 8))
+         (vocals (9 10))
+        )
+     )
+     ;                  K          SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0  -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0 -1.0  -2.0 -2.0   -3.0 -3.0  -3.0  -2.5 -2.5  -2.2 -2.2  -4.0 -4.0 ))
+     (cores       (  -1   -1    -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/mellowshipslinkyinbmajor/mellowshipslinkyinbmajor.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoFast)
+   (preview 74267 103386)
+   (rank
+      (drum 331)
+      (guitar 243)
+      (bass 243)
+      (vocals 260)
+      (band 280)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 7)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 586117)
+)
+
+(sirpsychosexy
+   (name "Sir Psycho Sexy")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 410)
+   (song
+     (name        songs/sirpsychosexy/sirpsychosexy)
+     (tracks
+        ((drum (0 1 2 3 4 5))
+         (bass 6)
+         (guitar (7 8))
+         (vocals (9 10))
+        )
+     )
+     ;                  K          SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0  -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0 -1.0  -1.4 -1.4   -3.0 -3.0  -4.7  -4.7 -4.7  -0.5 -0.5  -3.0 -3.0 ))
+     (cores       (  -1   -1    -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/sirpsychosexy/sirpsychosexy.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 43073 73073)
+   (rank
+      (drum 163)
+      (guitar 269)
+      (bass 220)
+      (vocals 220)
+      (band 213)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 16)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 800789)
+)
+
+(suckmykiss
+   (name "Suck My Kiss")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 400)
+   (song
+     (name        songs/suckmykiss/suckmykiss)
+     (tracks
+        ((drum (0 1 2 3))
+         (bass 4)
+         (guitar (5 6))
+         (vocals (7 8))
+        )
+     )
+     ;                K     SN     CYMBALS     BS     GUITAR     VOCALS     TRACKS
+     (pans        (  0.0    0.0    -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0   -1.0    -3.0 -3.0  -3.5  -6.0 -6.0  -1.5 -1.5  -3.0 -3.0 ))
+     (cores       (  -1     -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/suckmykiss/suckmykiss.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 64600 86300)
+   (rank
+      (drum 190)
+      (guitar 268)
+      (bass 260)
+      (vocals 250)
+      (band 234)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 5)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 540635)
+)
+
+(thegreetingsong
+   (name "The Greeting Song")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 408)
+   (song
+     (name        songs/thegreetingsong/thegreetingsong)
+     (tracks
+        ((drum (0 1 2 3))
+         (bass 4)
+         (guitar (5 6))
+         (vocals (7 8))
+        )
+     )
+     ;                K     SN     CYMBALS     BS     GUITAR     VOCALS     TRACKS
+     (pans        (  0.0    0.0    -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.5   -1.5    -3.0 -3.0  -3.0  -4.5 -4.5  -2.7 -2.7  -3.0 -3.0 ))
+     (cores       (  -1     -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/thegreetingsong/thegreetingsong.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 67700 89500)
+   (rank
+      (drum 354)
+      (guitar 275)
+      (bass 260)
+      (vocals 245)
+      (band 330)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 14)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 555575)
+)
+
+(therighteousandthewicked
+   (name "The Righteous and the Wicked")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 403)
+   (song
+     (name        songs/therighteousandthewicked/therighteousandthewicked)
+     (tracks
+        ((drum (0 1 2 3 4 5))
+         (bass 6)
+         (guitar (7 8))
+         (vocals (9 10))
+        )
+     )
+     ;                  K          SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0  -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.5 -1.5  -2.0 -2.0   -3.0 -3.0  -4.0  -3.6 -3.6  -2.2 -2.2  -3.3 -3.3 ))
+     (cores       (  -1   -1    -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/therighteousandthewicked/therighteousandthewicked.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/cowbell3_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 112249 141982)
+   (rank
+      (drum 161)
+      (guitar 257)
+      (bass 265)
+      (vocals 265)
+      (band 218)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 8)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 457601)
+)
+
+(nakedintherain
+   (name "Naked in the Rain")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 406)
+   (song
+     (name        songs/nakedintherain/nakedintherain)
+     (tracks
+        ((drum (0 1 2 3))
+         (bass 4)
+         (guitar (5 6))
+         (vocals (7 8))
+        )
+     )
+     ;                K     SN     CYMBALS     BS     GUITAR     VOCALS     TRACKS
+     (pans        (  0.0    0.0    -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -0.5   -0.5    -1.5 -1.5  -3.0  -4.0 -4.0  -2.5 -2.5  -2.5 -2.5 ))
+     (cores       (  -1     -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/nakedintherain/nakedintherain.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 82000 102600)
+   (rank
+      (drum 251)
+      (guitar 258)
+      (bass 300)
+      (vocals 235)
+      (band 263)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 12)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 685973)
+)
+
+(thepowerofequality
+   (name "The Power of Equality")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 396)
+   (song
+     (name        songs/thepowerofequality/thepowerofequality)
+     (tracks
+        ((drum (0 1 2 3 4))
+         (bass 5)
+         (guitar (6 7))
+         (vocals (8 9))
+        )
+     )
+     ;                K        SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS
+     (pans        (  0.0   -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0   -1.5 -1.5   -3.0 -3.0  -2.0  -4.0 -4.0  -2.0 -2.0  -3.0 -3.0 ))
+     (cores       (  -1     -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/thepowerofequality/thepowerofequality.mid)
+     (hopo_threshold 90)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 42500 65200)
+   (rank
+      (drum 285)
+      (guitar 250)
+      (bass 290)
+      (vocals 170)
+      (band 260)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 1)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 739042)
+)
+
+(mylovelyman
+   (name "My Lovely Man")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 409)
+   (song
+     (name        songs/mylovelyman/mylovelyman)
+     (tracks
+        ((drum (0 1 2 3 4 5))
+         (bass 6)
+         (guitar (7 8))
+         (vocals (9 10))
+        )
+     )
+     ;                  K          SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0  -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.5 -1.5  -1.5 -1.5   -1.5 -1.5  -4.0  -6.0 -6.0  -6.5 -6.5  -3.0 -3.0 ))
+     (cores       (  -1   -1    -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/mylovelyman/mylovelyman.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 33000 65000)
+   (rank
+      (drum 356)
+      (guitar 272)
+      (bass 202)
+      (vocals 240)
+      (band 278)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 15)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 653269)
+)
+
+(theyreredhot
+   (name "They're Red Hot")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 411)
+   (song
+     (name        songs/theyreredhot/theyreredhot)
+     (tracks
+        ((drum (0 1 2 3))
+         (bass 4)
+         (guitar (5 6))
+         (vocals (7 8))
+        )
+     )
+     ;                K     SN     CYMBALS     BS     GUITAR     VOCALS     TRACKS
+     (pans        (  0.0    0.0    -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.0   -1.5    -3.5 -3.5  -3.0  -4.5 -4.5  -2.5 -2.5  -3.0 -3.0 ))
+     (cores       (  -1     -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/theyreredhot/theyreredhot.mid)
+   )
+   (song_scroll_speed 1300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoMedium)
+   (preview 17100 40700)
+   (rank
+      (drum 500)
+      (guitar 350)
+      (bass 275)
+      (vocals 470)
+      (band 490)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 17)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 302257)
+)
+
+;----------------------------------------------------------------------
+; WEEK 45, launch 09/23/08
+; Rush 'Moving Pictures' album, RB2 singles (6)
+
+(underthebridge
+   (name "Under the Bridge")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 405)
+   (song
+     (name        songs/underthebridge/underthebridge)
+     (tracks
+        ((drum (0 1 2 3 4 5))
+         (bass 6)
+         (guitar (7 8))
+         (vocals (9 10))
+        )
+     )
+     ;                  K          SN       CYMBALS    BS     GUITAR     VOCALS     TRACKS
+     (pans        ( -1.0  1.0  -1.0  1.0   -1.0  1.0   0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -3.2 -3.2  -2.9 -2.9   -3.0 -3.0  -2.5  -3.1 -3.1  -3.7 -3.7  -5.0 -5.0 ))
+     (cores       (  -1   -1    -1   -1     -1   -1    -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/underthebridge/underthebridge.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 34800 62000
+  )
+   (rank
+      (drum 111)
+      (guitar 145)
+      (bass 160)
+      (vocals 230)
+      (band 115)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 11)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 474551)
+)
+
+(ifyouhavetoask
+   (name "If You Have to Ask")
+   (artist "Red Hot Chili Peppers")
+   (master TRUE)
+   (context 397)
+   (song
+     (name        songs/ifyouhavetoask/ifyouhavetoask)
+     (tracks
+        ((drum (0 1 2))
+         (bass 3)
+         (guitar (4 5))
+         (vocals (6 7))
+        )
+     )
+     ;                K    SN/CYM      BS     GUITAR     VOCALS     TRACKS
+     (pans        (  0.0  -1.0  1.0    0.0  -1.0  1.0  -1.0  1.0  -1.0  1.0 ))
+     (vols        ( -1.5  -2.5 -2.5   -1.7  -3.5 -3.5  -2.5 -2.5  -5.0 -5.0 ))
+     (cores       (  -1    -1   -1     -1     1    1    -1   -1    -1   -1  ))
+     (drum_solo
+        (seqs (kick.cue snare.cue tom1.cue tom2.cue crash.cue))
+     )
+     (drum_freestyle
+        (seqs (kick.cue snare.cue hat.cue ride.cue crash.cue))
+     )
+     (midi_file songs/ifyouhavetoask/ifyouhavetoask.mid)
+   )
+   (song_scroll_speed 2300)
+   (bank sfx/tambourine_bank.milo)
+   (anim_tempo kTempoSlow)
+   (preview 53250 81600)
+   (rank
+      (drum 291)
+      (guitar 252)
+      (bass 293)
+      (vocals 215)
+      (band 289)
+   )
+   (genre alternative)
+   (decade the90s)
+   (vocal_gender male)
+
+   (format 3)
+   (version 1)               ; Only modified by coders!
+   (fake {== $SONG_VERSION 0})	
+   (downloaded {> $SONG_VERSION 0})
+
+   (album_art TRUE) ; if TRUE, the actual album art will be required
+   (year_released 1991)
+   (album_name "Blood Sugar Sex Magik")   ; OPTIONAL  (e.g. for covers)
+   (album_track_number 2)   ; OPTIONAL (would require album_name if added). If omitted Set Challenges use difficulty sorting.
+   ;(pack_name "^^^Moonwalk (or die...) 3-pack^^^")  ; OPTIONAL
+   ;(base_points 507342)
+)
+
