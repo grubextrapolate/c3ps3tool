@@ -50,7 +50,7 @@ my $backupext   = "." . strftime("%Y%m%d%H%M%S", localtime(time));
 # command-line configurable options:
 my $custombase  = "/dev_hdd0/game/BLUS30463/USRDIR/HMX0756/";
 #my $dtalist     = "PS3_DTA_LIST.csv";
-my $dtalist     = "/home/rburdick/Downloads/rb3custom/tools/perl/PS3_DTA_LIST.csv";
+my $dtalist     = "/work/rb3custom/tools/perl/PS3_DTA_LIST.csv";
 my $mididir     = "";
 my $ip          = "192.168.1.10";
 #my $ip          = "localhost";
@@ -60,11 +60,11 @@ my $pass        = '-anonymous@';
 my $searchpath  = "";
 my $logfile     = "";
 #my $c3config    = "ps3.config";
-my $c3config    = "/home/rburdick/Downloads/rb3custom/tools/perl/ps3.config";
+my $c3config    = "/work/rb3custom/tools/perl/ps3.config";
 my $configfile  = File::Spec->catfile($ENV{'HOME'}, ".c3ps3toolrc");
 
 # options for building a make_npdata command to encrypt a mid to mid.edat:
-my $npdataPath  = "~/Downloads/rb3custom/tools/npdata/make_npdata-master/Linux/make_npdata";
+my $npdataPath  = "/work/rb3custom/tools/npdata/make_npdata-master/Linux/make_npdata";
 my $npdataOpts  = "1 1 2 0 16 3 00 UP8802-BLUS30463_00-RBHMXBANDCCFF0D6 8 0B72B62DABA8CAFDA3352FF979C6D5C2";
 my $npdataCmdFmt = $npdataPath . " -v -e %s %s " . $npdataOpts;
 my $npdataCmd   = sprintf($npdataCmdFmt, "infile", "infile" . ENCREXT);
@@ -347,7 +347,7 @@ sub upgradeFiles
          foreach my $newupgrade (@{$upgradeinfo{'upgradeparsed'}})
          {
             my $newsongdta = findkey($upgradeinfo{'newsongparsed'}, $newupgrade->{'shortname'})
-               or die "could not find song $newupgrade->{'shortname'} in songs.dta!\n";
+               or die "could not find song $newupgrade->{'shortname'} in $upgradeinfo{'newsongdta'}!\n";
 
             # Sanity tests on upgrades.dta + new songs.dta combo
             #
@@ -374,11 +374,16 @@ sub upgradeFiles
                                  . " and upgrades.dta shortname "
                                  . $newupgrade->{'shortname'}
                                  . " do not match! fixing upgrades.dta\n";
-                  $tmpnew = $newupgrade->{'shortname'};
-                  $newsongdta->{'_raw'} =~ s/^(\(\s*)(['"]?)([a-zA-Z0-9_-]+)(['"]?)(\s*)/$1\Q$tmpnew\E$5/s;
-                  $newsongdta->{'shortname'} = $tmpnew;
-                  myprint VERYVERBOSE, "fixed dta (" . $newsongdta->{'shortname'} . "):\n";
-                  myprint VERYVERBOSE, $newsongdta->{'_raw'} . "\n";
+#                  $tmpnew = $newupgrade->{'shortname'};
+#                  $newsongdta->{'_raw'} =~ s/^(\(\s*)(['"]?)([a-zA-Z0-9_-]+)(['"]?)(\s*)/$1\Q$tmpnew\E$5/s;
+#                  $newsongdta->{'shortname'} = $tmpnew;
+#                  myprint VERYVERBOSE, "fixed dta (" . $newsongdta->{'shortname'} . "):\n";
+#                  myprint VERYVERBOSE, $newsongdta->{'_raw'} . "\n";
+                  $tmpnew = $newsongdta->{'shortname'};
+                  $newupgrade->{'_raw'} =~ s/^(\(\s*)(['"]?)([a-zA-Z0-9_-]+)(['"]?)(\s*)/$1\Q$tmpnew\E$5/s;
+                  $newupgrade->{'shortname'} = $tmpnew;
+                  myprint VERYVERBOSE, "fixed dta (" . $newupgrade->{'shortname'} . "):\n";
+                  myprint VERYVERBOSE, $newupgrade->{'_raw'} . "\n";
                }
                else
                {
@@ -390,7 +395,7 @@ sub upgradeFiles
             if (   $newsongdta->{'song_id'} && $newupgrade->{'song_id'}
                 && $newsongdta->{'song_id'} ne $newupgrade->{'song_id'})
             {
-               die "songs.dta shortname " . $newsongdta->{'song_id'} . " and upgrades.dta shortname "
+               die "songs.dta song_id " . $newsongdta->{'song_id'} . " and upgrades.dta song_id "
                    . $newupgrade->{'song_id'} . " do not match!\n";
             }
 
@@ -415,7 +420,7 @@ sub upgradeFiles
                {
 #                  die "song " . $newupgrade->{'shortname'} . " already installed!\n";
                   myprint NORMAL, "song " . $newupgrade->{'shortname'} . " already installed! skipping...\n";
-                  continue;
+                  next;
                }
             }
             else
@@ -548,10 +553,15 @@ sub upgradeFiles
                }
                elsif ($newsongdta->{'shortname'} ne $oldsong->{'shortname'})
                {
+		  # unquoted name will be treated as lowercase - unless it is quoted.
+		  # so having an unquoted name match a quoted one only works if the
+		  # unquoted one is also lowercase.
                   if (   (   $newsongdta->{'shortname'} =~ /^['"]+.+['"]+$/
-                          && substr($newsongdta->{'shortname'}, 1, -1) eq $oldsong->{'shortname'})
+                          && substr($newsongdta->{'shortname'}, 1, -1) eq $oldsong->{'shortname'}
+                          && lc($oldsong->{'shortname'}) eq $oldsong->{'shortname'})
                       || (   $oldsong->{'shortname'} =~ /^['"]+.+['"]+$/
-                          && substr($oldsong->{'shortname'}, 1, -1) eq $newsongdta->{'shortname'}))
+                          && substr($oldsong->{'shortname'}, 1, -1) eq $newsongdta->{'shortname'}
+                          && lc($newsongdta->{'shortname'}) eq $newsongdta->{'shortname'}))
                   {
                      myprint DEBUG, "new shortname " . $newsongdta->{'shortname'} . " and old shortname "
                          . $oldsong->{'shortname'} . " do not match!\n";
@@ -970,7 +980,7 @@ sub encryptFile
    my $outfile   = $infile . ENCREXT;
    my $npdataCmd = sprintf($npdataCmdFmt, shell_quote($infile), shell_quote($outfile));
 
-   myprint NORMAL, "encrypting " . $infile . " to " . $outfile . "...";
+   myprint NORMAL, "encrypting " . $infile . " to " . $outfile . "...\n";
    my $res = `$npdataCmd`;
    if (   $res =~ /File successfully encrypted/
        && $res =~ /File successfully forged/)
