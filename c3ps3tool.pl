@@ -286,7 +286,6 @@ sub upgradeFiles
          {
             $ftp->get( UPGRADEFILE, $upgradedta)
                or die "Cannot get " . UPGRADEFILE, $ftp->message;
-#            if ($ftpsleep) { sleep($ftpsleep); }
             if ($ftpsleep) { usleep($ftpsleep); }
 
             $existingupgraderef = parseDTA($upgradedta, 1);
@@ -313,6 +312,8 @@ sub upgradeFiles
 
       foreach my $upgrade (@ARGV)
       {
+         myprint DEBUG, "processing $upgrade\n";
+
          $lastpath = $upgrade;
          my %upgradeinfo;
          $upgradeinfo{'path'} = $upgrade;
@@ -344,10 +345,89 @@ sub upgradeFiles
 
          # $newupgrade == entry from new upgrades.dta
          # $newsongdta == entry from new songs.dta
-         foreach my $newupgrade (@{$upgradeinfo{'upgradeparsed'}})
+         foreach my $newsongdta (@{$upgradeinfo{'newsongparsed'}})
          {
-            my $newsongdta = findkey($upgradeinfo{'newsongparsed'}, $newupgrade->{'shortname'})
-               or die "could not find song $newupgrade->{'shortname'} in $upgradeinfo{'newsongdta'}!\n";
+            my $newupgrade = findkey($upgradeinfo{'upgradeparsed'}, $newsongdta->{'shortname'})
+               or die "could not find song $newsongdta->{'shortname'} in $upgradeinfo{'upgradeparsed'}!\n";
+
+            # we need the new songs.dta to replace the existing stock one.
+            #
+            # when we alter the original songs.dta file, we must update them all
+            # the same way (for cases where the user has multiple copies of the
+            # same song).
+            # ####################################################################
+            $upgradeinfo{'originfo'} = findExistingSong($csv, $newsongdta->{'shortname'});
+            foreach my $match (@{$upgradeinfo{'originfo'}})
+            {
+
+               # If we haven't seen this target dta before, create an entry for
+               # it. This will allow us to do multiple updates to the same file
+               # with only one read+write as opposed to one for each song.
+               if (! $songupgradelist{ $match->{'DTA Path'} })
+               {
+                  my %newentry;
+                  $newentry{'local'}  = mktemp($tmptemplate);
+                  push @filesToRemove, $newentry{'local'};
+                  myprint DEBUG, "local=$newentry{'local'}\n";
+                  $newentry{'remote'} = $match->{'DTA Path'};
+
+                  myprint DEBUG, "oldsongdta=" . $newentry{'remote'} . "\n";
+                  $ftp->get( $newentry{'remote'}, $newentry{'local'})
+                     or die "Cannot get " . $newentry{'remote'}, $ftp->message;
+                  if ($ftpsleep) { usleep($ftpsleep); }
+
+                  $newentry{'dta'} = parseDTA($newentry{'local'});
+                  myprint DEBUG, "newentry=" . $newentry{'dta'} . "\n";
+
+                  my $newsanity = findkey($newentry{'dta'}, $newsongdta->{'shortname'})
+                     or die "could not find song $newsongdta->{'shortname'} in $newentry{'dta'}!\n";
+
+                  $songupgradelist{ $match->{'DTA Path'} } = \%newentry;
+               }
+               my $upgradedta = $songupgradelist{ $match->{'DTA Path'} };
+
+               # find the entry we want to change within the newly-read stock
+               # songs.dta
+               my $oldsong = findkey($upgradedta->{'dta'}, $newsongdta->{'shortname'});
+
+               # sanity checking between stock+new
+               if (!$oldsong)
+               {
+                  die "new shortname " . $newsongdta->{'shortname'} . " not found "
+                      . "in existing dta!\n";
+               }
+               elsif ($newsongdta->{'shortname'} ne $oldsong->{'shortname'})
+               {
+		  # unquoted name will be treated as lowercase - unless it is quoted.
+		  # so having an unquoted name match a quoted one only works if the
+		  # unquoted one is also lowercase.
+                  if (   (   $newsongdta->{'shortname'} =~ /^['"]+.+['"]+$/
+                          && lc(substr($newsongdta->{'shortname'}, 1, -1)) eq lc($oldsong->{'shortname'}))
+                      || (   $oldsong->{'shortname'} =~ /^['"]+.+['"]+$/
+                          && lc(substr($oldsong->{'shortname'}, 1, -1)) eq lc($newsongdta->{'shortname'})))
+                  {
+                     myprint DEBUG, "new shortname " . $newsongdta->{'shortname'} . " and old shortname "
+                         . $oldsong->{'shortname'} . " approximate match. equalizing...\n";
+
+                     my $tmpnew = $oldsong->{'shortname'};
+                     $newsongdta->{'_raw'} =~ s/^(\(\s*)(['"]?)([a-zA-Z0-9_-]+)(['"]?)(\s*)/$1$tmpnew$5/s;
+                     $newsongdta->{'shortname'} = $tmpnew;
+                     myprint VERYVERBOSE, "fixed dta (" . $newsongdta->{'shortname'} . "):\n";
+                     myprint VERYVERBOSE, $newsongdta->{'_raw'} . "\n";
+                     
+                  }
+                  else
+                  {
+                     die "new shortname " . $newsongdta->{'shortname'} . " and old shortname "
+                         . $oldsong->{'shortname'} . " do not match!\n";
+                  }
+               }
+
+               # cut the old version out of the dta, then insert our new one.
+               # Use $oldsong since it's the one guaranteed to match.
+               @{$upgradedta->{'dta'}} = grep { $_->{'shortname'} ne $oldsong->{'shortname'} } @{$upgradedta->{'dta'}};
+               push @{$upgradedta->{'dta'}}, $newsongdta;
+            }
 
             # Sanity tests on upgrades.dta + new songs.dta combo
             #
@@ -374,13 +454,8 @@ sub upgradeFiles
                                  . " and upgrades.dta shortname "
                                  . $newupgrade->{'shortname'}
                                  . " do not match! fixing upgrades.dta\n";
-#                  $tmpnew = $newupgrade->{'shortname'};
-#                  $newsongdta->{'_raw'} =~ s/^(\(\s*)(['"]?)([a-zA-Z0-9_-]+)(['"]?)(\s*)/$1\Q$tmpnew\E$5/s;
-#                  $newsongdta->{'shortname'} = $tmpnew;
-#                  myprint VERYVERBOSE, "fixed dta (" . $newsongdta->{'shortname'} . "):\n";
-#                  myprint VERYVERBOSE, $newsongdta->{'_raw'} . "\n";
                   $tmpnew = $newsongdta->{'shortname'};
-                  $newupgrade->{'_raw'} =~ s/^(\(\s*)(['"]?)([a-zA-Z0-9_-]+)(['"]?)(\s*)/$1\Q$tmpnew\E$5/s;
+                  $newupgrade->{'_raw'} =~ s/^(\(\s*)(['"]?)([a-zA-Z0-9_-]+)(['"]?)(\s*)/$1$tmpnew$5/s;
                   $newupgrade->{'shortname'} = $tmpnew;
                   myprint VERYVERBOSE, "fixed dta (" . $newupgrade->{'shortname'} . "):\n";
                   myprint VERYVERBOSE, $newupgrade->{'_raw'} . "\n";
@@ -418,7 +493,6 @@ sub upgradeFiles
                }
                else
                {
-#                  die "song " . $newupgrade->{'shortname'} . " already installed!\n";
                   myprint NORMAL, "song " . $newupgrade->{'shortname'} . " already installed! skipping...\n";
                   next;
                }
@@ -505,80 +579,6 @@ sub upgradeFiles
             push @midiuploadlist, $upgradeinfo{'midi'};
             $needupload = 1;
 
-
-
-            # now we need the new songs.dta to replace the existing stock one.
-            #
-            # when we alter the original songs.dta file, we must update them all
-            # the same way (for cases where the user has multiple copies of the
-            # same song).
-            # ####################################################################
-            $upgradeinfo{'originfo'} = findExistingSong($csv, $newupgrade->{'shortname'});
-            foreach my $match (@{$upgradeinfo{'originfo'}})
-            {
-
-               # If we haven't seen this target dta before, create an entry for
-               # it. This will allow us to do multiple updates to the same file
-               # with only one read+write as opposed to one for each song.
-               if (! $songupgradelist{ $match->{'DTA Path'} })
-               {
-                  my %newentry;
-#                  $newentry{'local'}  = tmpnam();
-                  $newentry{'local'}  = mktemp($tmptemplate);
-                  push @filesToRemove, $newentry{'local'};
-                  myprint DEBUG, "local=$newentry{'local'}\n";
-                  $newentry{'remote'} = $match->{'DTA Path'};
-
-                  myprint DEBUG, "oldsongdta=" . $newentry{'local'} . "\n";
-                  $ftp->get( $newentry{'remote'}, $newentry{'local'})
-                     or die "Cannot get " . $newentry{'remote'}, $ftp->message;
-#                  if ($ftpsleep) { sleep($ftpsleep); }
-                  if ($ftpsleep) { usleep($ftpsleep); }
-
-                  $newentry{'dta'} = parseDTA($newentry{'local'});
-
-                  $songupgradelist{ $match->{'DTA Path'} } = \%newentry;
-               }
-               my $upgradedta = $songupgradelist{ $match->{'DTA Path'} };
-
-               # find the entry we want to change within the newly-read stock
-               # songs.dta
-               my $oldsong = findkey($upgradedta->{'dta'}, $newupgrade->{'shortname'});
-
-               # sanity checking between stock+new
-               if (!$oldsong)
-               {
-                  die "new shortname " . $newsongdta->{'shortname'} . " not found "
-                      . "in existing dta!\n";
-               }
-               elsif ($newsongdta->{'shortname'} ne $oldsong->{'shortname'})
-               {
-		  # unquoted name will be treated as lowercase - unless it is quoted.
-		  # so having an unquoted name match a quoted one only works if the
-		  # unquoted one is also lowercase.
-                  if (   (   $newsongdta->{'shortname'} =~ /^['"]+.+['"]+$/
-                          && substr($newsongdta->{'shortname'}, 1, -1) eq $oldsong->{'shortname'}
-                          && lc($oldsong->{'shortname'}) eq $oldsong->{'shortname'})
-                      || (   $oldsong->{'shortname'} =~ /^['"]+.+['"]+$/
-                          && substr($oldsong->{'shortname'}, 1, -1) eq $newsongdta->{'shortname'}
-                          && lc($newsongdta->{'shortname'}) eq $newsongdta->{'shortname'}))
-                  {
-                     myprint DEBUG, "new shortname " . $newsongdta->{'shortname'} . " and old shortname "
-                         . $oldsong->{'shortname'} . " do not match!\n";
-                  }
-                  else
-                  {
-                     die "new shortname " . $newsongdta->{'shortname'} . " and old shortname "
-                         . $oldsong->{'shortname'} . " do not match!\n";
-                  }
-               }
-
-               # cut the old version out of the dta, then insert our new one.
-               # Use $oldsong since it's the one guaranteed to match.
-               @{$upgradedta->{'dta'}} = grep { $_->{'shortname'} ne $oldsong->{'shortname'} } @{$upgradedta->{'dta'}};
-               push @{$upgradedta->{'dta'}}, $newsongdta;
-            }
-#         $i++;
          }
       }
 
@@ -598,7 +598,6 @@ sub upgradeFiles
          {
             myprint NORMAL, "uploading $upfile\n";
             $ftp->put($upfile);
-#            if ($ftpsleep) { sleep($ftpsleep); }
             if ($ftpsleep) { usleep($ftpsleep); }
             $nummidi++;
          }
@@ -609,20 +608,15 @@ sub upgradeFiles
          if (   ! $nobackup
              && doesFileExist($ftp, $custombase . UPGRADEDIR . "/". UPGRADEFILE) )
          {
-#         $ftp->rename(UPGRADEFILE, UPGRADEFILE . $backupext)
-#            or die "Failed to rename " . UPGRADEFILE . " to "
-#                   . UPGRADEFILE . $backupext, $ftp->message;
             ftpcopy($ftp, UPGRADEFILE, UPGRADEFILE . $backupext);
             myprint DEBUG, "backing up " . UPGRADEFILE . "\n";
-#            if ($ftpsleep) { sleep($ftpsleep); }
             if ($ftpsleep) { usleep($ftpsleep); }
          }
          writeDTA($existingupgraderef, $upgradedta);
 
-         myprint NORMAL, "uploading new " . UPGRADEFILE . "\n";
+         myprint NORMAL, "uploading new " . UPGRADEFILE . " to " . $custombase . UPGRADEDIR . "\n";
          $ftp->put( $upgradedta, UPGRADEFILE )
             or die "Cannot put " . UPGRADEFILE, $ftp->message;
-#         if ($ftpsleep) { sleep($ftpsleep); }
          if ($ftpsleep) { usleep($ftpsleep); }
          $numdta++;
 
@@ -637,27 +631,17 @@ sub upgradeFiles
             if (   ! $noorig
                 && ! doesFileExist($ftp, $upgradedta->{'remote'} . ORIGEXT) )
             {
-#            $ftp->rename($upgradedta->{'remote'},
-#                         $upgradedta->{'remote'} . ORIGEXT)
-#               or die "Failed to rename $upgradedta->{'remote'} to "
-#                      . $upgradedta->{'remote'} . ORIGEXT, $ftp->message;
                myprint DEBUG, "saving original " . SONGFILE . "\n";
                ftpcopy($ftp, $upgradedta->{'remote'},
                        $upgradedta->{'remote'} . ORIGEXT);
-#               if ($ftpsleep) { sleep($ftpsleep); }
                if ($ftpsleep) { usleep($ftpsleep); }
             }
             # make backup of current songs.dta on the ps3
             elsif (! $nobackup)
             {
-#            $ftp->rename($upgradedta->{'remote'},
-#                         $upgradedta->{'remote'} . $backupext)
-#               or die "Failed to rename $upgradedta->{'remote'} to "
-#                      . $upgradedta->{'remote'} . $backupext, $ftp->message;
                myprint DEBUG, "backing up " . SONGFILE . "\n";
                ftpcopy($ftp, $upgradedta->{'remote'},
                        $upgradedta->{'remote'} . $backupext);
-#               if ($ftpsleep) { sleep($ftpsleep); }
                if ($ftpsleep) { usleep($ftpsleep); }
             }
 
@@ -665,11 +649,10 @@ sub upgradeFiles
             writeDTA($upgradedta->{'dta'}, $upgradedta->{'local'});
 
             # upload it to the server
-            myprint NORMAL, "uploading new " . SONGFILE . "\n";
+            myprint NORMAL, "uploading new " . SONGFILE . " to $upgradedta->{'remote'}\n";
             $ftp->put($upgradedta->{'local'}, $upgradedta->{'remote'})
                or die "Failed to rename " . SONGFILE . " to "
                       . SONGFILE . $backupext, $ftp->message;
-#            if ($ftpsleep) { sleep($ftpsleep); }
             if ($ftpsleep) { usleep($ftpsleep); }
             $numdta++;
 
@@ -740,18 +723,6 @@ sub installFiles
          die "existing dta has no songs!\n";
       }
 
-      # make backup of current songs.dta
-      #$ftp->rename(SONGFILE, SONGFILE . $backupext)
-#      $ftp->put($songdta, SONGFILE . $backupext)
-#         or die "Failed to rename " . SONGFILE . " to " . SONGFILE . $backupext, $ftp->message;
-
-#      $ftp->cwd($custombase . SONGDIR)
-#         or die "Cannot change working directory to $custombase", $ftp->message;
-
-
-
-
-#      my $rar = $ARGV[0];
       foreach my $rar (@ARGV)
       {
          $installinfo{'rar'}    = $rar;
@@ -764,16 +735,8 @@ sub installFiles
          # read new song upgrade info and append/replace in existing upgrade
          # info
          # ####################################################################
-#         $installinfo{'upgradedta'} = $upgrade . "/" . UPGRADEFILE;
-#         $installinfo{'newsongdta'} = $upgrade . "/" . SONGFILE;
-
-#         $installinfo{'upgradeparsed'} = parseDTA($installinfo{'upgradedta'});
-#         $installinfo{'newsongparsed'} = parseDTA($installinfo{'newsongdta'});
 
          # fetch current customs songs.dta into a temp file.
-#         my $rardir = mktemp($tmptemplate);
-#         push @dirsToRemove, $rardir;
-#         mkdir $rardir;
 
          # EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
          # BIG FAT HACK
@@ -806,7 +769,6 @@ sub installFiles
          {
             if (findkey($existingsongref, $song->{'shortname'}))
             {
-#               die "song " . $song->{'shortname'} . " already installed!\n";
                myprint NORMAL, "song " . $song->{'shortname'} . " already installed - reinstalling!\n";
                @{$existingsongref} = grep { $_->{'shortname'} ne $song->{'shortname'} } @{$existingsongref};
             }
@@ -816,20 +778,15 @@ sub installFiles
             # a non-numeric ID, but scores won't save correctly unless it is
             # numeric.
             checkAndFixSongid($song, $config);
-#            my @tmparr = ( $song );
-#            writeDTA(\@tmparr, "testout");
 
             # we need to do a couple of things here:
             # 1) merge the new song into existing
             push @{$existingsongref}, $song;
 
             # 2) put the directory on the upload list
-#            push @uploadlist, $updir; # hack - only works for single song rar
-#            push @uploadlist, @updirs; # hack - always assumes exact matches
             my $songpath = $song->{'song_path'};
             if ($songpath)
             {
-#               myprint DEBUG, "songpath: $songpath\n";
                # the songpath looks like songs/<songname>/<songname> and we
                # just want one of those <songname>s
                if ($songpath =~ m|songs/([^\/]+)/.+|)
@@ -857,7 +814,6 @@ sub installFiles
             {
                die "song_path not found in dta!\n";
             }
-#die "dying";
 
             # 3) set flag to indicate we'll need to write the new dta + upload stuff.
             $needupload = 1;
@@ -1098,18 +1054,8 @@ sub findExistingSong($$)
       $search = substr $search, 1, -1;
    }
    $search = lc($search);
-#myprint DEBUG, "searchlc $search\n";
 
-#   return [ grep { lc($_->{'Short Name'}) eq $search } @{$csvinfo} ];
    my $arref = [ grep { lc($_->{'Short Name'}) eq $search } @{$csvinfo} ];
-   if (scalar @{$arref})
-   {
-#      myprint DEBUG, "searchlc arref true!\n";
-   }
-   foreach my $entry ( @{$arref} )
-   {
-#      myprint DEBUG, "shortname $entry->{'Short Name'} searchlc $search\n";
-   }
    return $arref;
 }
 
@@ -1128,7 +1074,6 @@ sub searchForUpgrades($$)
 
    foreach my $dir (@maindirs)
    {
-#      myprint DEBUG, "maindir: $dir\n";
       my $searchdir = File::Spec->catdir($searchpath, $dir);
       opendir DIR, $searchdir or die "can't open directory $searchdir! $!\n";
       my @songdirs = grep { !/^\./ } readdir(DIR);
@@ -1136,15 +1081,12 @@ sub searchForUpgrades($$)
 
       foreach my $songdir (@songdirs)
       {
-#         myprint DEBUG, "songdir $songdir\n";
          my $dta = File::Spec->catfile($searchdir, $songdir, SONGFILE);
-#         myprint DEBUG, "dta $dta\n";
          my $parsed = parseDTA($dta);
          foreach my $song ( @{$parsed} )
          {
             if (scalar @{findExistingSong($csvinfo, $song->{'shortname'})})
             {
-#               myprint DEBUG, "foundsongdir $songdir\n";
                push @upgrades, File::Spec->catdir($searchdir, $songdir);
                $sources{$song->{'shortname'}} = File::Spec->catdir($searchdir, $songdir);
             }
@@ -1227,14 +1169,8 @@ sub doesFileExist($$)
       die "path must be absolute! $path\n";
    }
 
-#   myprint DEBUG, "path=$path\n";
-#   myprint DEBUG, "parent=$parent\n";
-#   myprint DEBUG, "file=$file\n";
-#   myprint DEBUG, "current=$current\n";
    $ftp->cwd($parent)
       or die "Cannot change working directory to $parent", $ftp->message;
-
-#   myprint DEBUG,($ftp);
 
    my @dirs = grep { $_ eq $file } $ftp->ls();
    if ($dirs[0])
@@ -1257,14 +1193,12 @@ sub ftpcopy($$$)
    my $src = shift;
    my $dst = shift;
 
-#   my $tmp = tmpnam();
    my $tmp = mktemp($tmptemplate);
    push @filesToRemove, $tmp;
    myprint DEBUG, "tmp=$tmp\n";
 
    $ftp->get( $src, $tmp)
       or die "Cannot get $src to $tmp! ", $ftp->message;
-#   if ($ftpsleep) { sleep($ftpsleep); }
    if ($ftpsleep) { usleep($ftpsleep); }
 
    $ftp->put($tmp, $dst)
@@ -1448,7 +1382,7 @@ sub dumpDTA
       myprint NORMAL, "shortname=\"" . $child->{"shortname"} . "\"\n";
       foreach my $key ( sort keys %{ $child })
       {
-         if ($key ne "_raw")
+         if (($key ne "_raw") && ($key ne "_comment"))
          {
             myprint NORMAL, "$key=\"" . $child->{$key} . "\"\n";
          }
@@ -1456,10 +1390,10 @@ sub dumpDTA
          {
             # unescape any delimiters within comments
             my $song = $child->{$key};
-            $song =~ s/\\\(/\(/gs;
-            $song =~ s/\\\)/\)/gs;
-            $song =~ s/\\'/'/gs;
-            $song =~ s/\\"/"/gs;
+            $song =~ s/ESCAPEOPENBRACKET/\(/gs;
+            $song =~ s/ESCAPECLOSEBRACKET/\)/gs;
+            $song =~ s/ESCAPESINGLEQUOTE/'/gs;
+            $song =~ s/ESCAPEDOUBLEQUOTE/"/gs;
             myprint NORMAL, "$key=\"" . $song . "\"\n";
          }
       }
@@ -1480,12 +1414,22 @@ sub writeDTA
    open OUTFILE, ">$outfile" or die "can't open output file \"$outfile\": $!\n";
    foreach my $entry ( @{ $tree } )
    {
+      # if song had leading comment, write it
+      if ($entry->{"_comment"}) {
+         my $comment = $entry->{"_comment"};
+         $comment =~ s/ESCAPEOPENBRACKET/\(/gs;
+         $comment =~ s/ESCAPECLOSEBRACKET/\)/gs;
+         $comment =~ s/ESCAPESINGLEQUOTE/'/gs;
+         $comment =~ s/ESCAPEDOUBLEQUOTE/"/gs;
+         print OUTFILE $comment;
+      }
+
       # unescape any delimiters within comments
       my $song = $entry->{"_raw"};
-      $song =~ s/\\\(/\(/gs;
-      $song =~ s/\\\)/\)/gs;
-      $song =~ s/\\'/'/gs;
-      $song =~ s/\\"/"/gs;
+      $song =~ s/ESCAPEOPENBRACKET/\(/gs;
+      $song =~ s/ESCAPECLOSEBRACKET/\)/gs;
+      $song =~ s/ESCAPESINGLEQUOTE/'/gs;
+      $song =~ s/ESCAPEDOUBLEQUOTE/"/gs;
       print OUTFILE $song . "\n";
    }
    close OUTFILE;
@@ -1522,13 +1466,11 @@ sub parseDTA
       }
    }
 
-   my $firstline = 1;
    # slurp up the input file, throwing away comments
    open INFILE, $filename or die "can't open input file \"$filename\": $!\n";
    while($line = <INFILE>)
    {
       chomp $line;
-#      if ($line =~ s/\s*;.*//)
       # If we find a comment, we need to give it some special handling. First
       # split the line into a pre-comment part and the comment itself, then
       # go through the comment and escape any delimiters with a leading
@@ -1537,23 +1479,14 @@ sub parseDTA
       # -----------------------------------------------------------------------
       if ($line =~ /([^;]*);(.*)/)
       {
-         # a comment outside of a song breaks the parser...
-         # filter it out until i can come up with something better.
-         if ($firstline)
-         {
-            $firstline = 0;
-            next;
-         }
          # comments are annoying - they sometimes have typos and unbalanced
-         # brackets. strip them off of any line, deleting entirely if they are
-         # the only content.
-#         $s .= $line unless $line =~ /^\s+$/;
+         # brackets. escape brackets and quotes within the comment.
          my $precom = $1;
          my $com    = $2;
-         $com =~ s/\(/\\\(/g;
-         $com =~ s/\)/\\\)/g;
-         $com =~ s/'/\\'/g;
-         $com =~ s/"/\\"/g;
+         $com =~ s/\(/ESCAPEOPENBRACKET/g;
+         $com =~ s/\)/ESCAPECLOSEBRACKET/g;
+         $com =~ s/'/ESCAPESINGLEQUOTE/g;
+         $com =~ s/"/ESCAPEDOUBLEQUOTE/g;
          $s .= $precom . ";" . $com . "\n";
       }
       else
@@ -1563,19 +1496,46 @@ sub parseDTA
    }
    close INFILE;
 
-#   myprint DEBUG, "infile: \"$s\"\n";
-
    # returns an array of hash references, where each hash represents a single
    # song in the .dta file.
    # --------------------------------------------------------------------------
    return parseDTAString($s, $filename, $isUpgrade, $fixErrors);
 }
 
+sub getTokens($) {
+   my $s            = shift;
+   my $startcomment = "";
+
+   # extracts a set of bracket-balanced entries from the input. Since our input
+   # is a .dta file, each should represent a song.
+   my $expr = '(")';
+   my $pre  = '[\s\n\r]*';
+   my ($token, $remainder) = extract_bracketed($s, $expr, $pre );
+
+#   myprint DEBUG, "token=\"$token\"\n";
+#   myprint DEBUG, "remainder=\"$remainder\"\n";
+
+   # check for a broken parse due to comments mixed in between entries.
+   # if we find token is empty, but remainder doesn't and starts with a
+   # comment, strip it out and reparse.
+   if (!$token && $remainder && ($remainder =~ /^\s*;+/gs)) {
+#      myprint DEBUG, "comment outside song, save it\n";
+      $remainder =~ s/^([^;]+)//gs;
+      $remainder =~ s/^([^\(]+)//gs;
+      $startcomment = $1;
+      ($token, $remainder) = extract_bracketed($remainder, $expr, $pre);
+#      myprint DEBUG, "startcomment=\"$startcomment\"\n";
+#      myprint DEBUG, "token=\"$token\"\n";
+#      myprint DEBUG, "remainder=\"$remainder\"\n";
+   }
+
+   return ($token, $remainder, $startcomment);
+}
 
 # #############################################################################
-# parseDTA
-#   - parses a given filename, returning an array reference to a list of its
-#     songs.
+# parseDTAString
+#   - parses contents of given string, returning an array reference to a list
+#     of its songs.
 # #############################################################################
 sub parseDTAString
 {
@@ -1591,24 +1551,15 @@ sub parseDTAString
 
 #   myprint DEBUG, "tokenize...\n";
 
-   # extracts a set of bracket-balanced entries from the input. Since our input
-   # is a .dta file, each should represent a song.
-#   my @extracted = extract_multiple($s, [ sub { extract_bracketed($_, '({q})') } ]);
-#   my @extracted = extract_multiple($s, [ sub { extract_bracketed($_, '()') },
-#                                          sub { extract_bracketed($_, '(")') } ]);
-#   my @extracted = extract_multiple($s, [ \&extract_bracketed ]);
-
-   my $expr = '(")';
-   my $pre  = '[\s\n\r]*';
-   my ($token, $remainder) = extract_bracketed($s, $expr, $pre );
-
+   my ($token, $remainder, $startcomment) = getTokens($s);
+#   myprint DEBUG, "startcomment=\"$startcomment\"\n";
 #   myprint DEBUG, "token=\"$token\"\n";
 #   myprint DEBUG, "remainder=\"$remainder\"\n";
 
-#   foreach my $token (@extracted)
    while ($token)
    {
 #      myprint DEBUG, "next iter\n";
+#      myprint DEBUG, "token: \"$token\"\n";
       if ($token =~ /^\(/)
       {
 #         myprint DEBUG, "subtree\n";
@@ -1756,6 +1707,8 @@ sub parseDTAString
                die "ERROR: missing upgrade_version field in $filename\n";
             }
          }
+         $tmphash{"_comment"} = $startcomment;
+	 $startcomment = "";
          $tmphash{"_raw"} = $token;
 #         myprint DEBUG, "name=$1\n";
          push @retarray, \%tmphash;
@@ -1773,10 +1726,10 @@ sub parseDTAString
          die "shouldn't be here...$token\n";
 #         Tree::Simple->new($token, $tree);
       }
-      ($token, $remainder) = extract_bracketed($remainder, $expr, $pre);
-#   myprint DEBUG, "token=\"$token\"\n";
-#   myprint DEBUG, "remainder=\"$remainder\"\n";
-
+      ($token, $remainder, $startcomment) = getTokens($remainder);
+#      myprint DEBUG, "startcomment=\"$startcomment\"\n";
+#      myprint DEBUG, "token=\"$token\"\n";
+#      myprint DEBUG, "remainder=\"$remainder\"\n";
    }
 
    return \@retarray;
