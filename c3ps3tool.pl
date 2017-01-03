@@ -19,7 +19,7 @@ use Text::Balanced qw(extract_bracketed);
 use Time::HiRes qw(usleep);
 
 # constants/default values
-use constant VERSION     => "0.1.0";
+use constant VERSION     => "0.2.0";
 use constant SONGFILE    => "songs.dta";
 use constant SONGDIR     => "songs";
 use constant UPGRADEFILE => "upgrades.dta";
@@ -32,7 +32,6 @@ use constant SONGIDFMT   => "%d%d%05d";
 use constant NONE        => "NONE";
 use constant INSTALL     => "INSTALL";
 use constant UPGRADE     => "UPGRADE";
-use constant TEST        => "TEST";
 use constant UNINSTALL   => "UNINSTALL";
 use constant UNUPGRADE   => "UNUPGRADE";
 use constant DTAPARSE    => "DTAPARSE";
@@ -75,7 +74,8 @@ my $debug       = 0;
 my $noorig      = 0;
 my $nobackup    = 0;
 my $reinstall   = 0;
-my $ftpsleep    = 100;
+my $readonly    = 0;
+my $ftpsleep    = 100000; # microseconds, so = 100ms or 0.1s
 my $ftptimeout  = 120;
 my $logfh;
 my $tmptemplate = "/tmp/c3ps3toolXXXXXX";
@@ -128,6 +128,7 @@ GetOptions("custombase=s"  => \$custombase,
            "noorig"        => \$noorig,
            "nobackup"      => \$nobackup,
            "reinstall"     => \$reinstall,
+           "readonly"      => \$readonly,
            "tmptemplate=s" => \$tmptemplate,
            "search=s"      => \&setSearchPath,
            "logfile=s"     => \$logfile,
@@ -136,7 +137,6 @@ GetOptions("custombase=s"  => \$custombase,
            "uninstall"     => sub { checkSetMode(UNINSTALL); },
            "unupgrade"     => sub { checkSetMode(UNUPGRADE); },
            "dtaparse"      => sub { checkSetMode(DTAPARSE); },
-           "test"          => sub { checkSetMode(TEST); },
            "encrypt"       => sub { checkSetMode(ENCRYPT); },
            "version"       => sub { print "version " . VERSION . "\n"; exit(0); },
            "help"          => sub { pod2usage( -verbose => 1, -exitval => 0 ); },
@@ -306,8 +306,10 @@ sub upgradeFiles
       {
          # upgrade directory doesn't exist, create it.
          myprint DEBUG, "upgrade directory doesn't exist, creating it\n";
-         $ftp->mkdir(UPGRADEDIR)
-            or die "Cannot create upgrade directory " . $custombase . UPGRADEDIR, $ftp->message;
+	 if (!$readonly) {
+            $ftp->mkdir(UPGRADEDIR)
+               or die "Cannot create upgrade directory " . $custombase . UPGRADEDIR, $ftp->message;
+         }
       }
 
       foreach my $upgrade (@ARGV)
@@ -597,7 +599,9 @@ sub upgradeFiles
          foreach my $upfile (@midiuploadlist)
          {
             myprint NORMAL, "uploading $upfile\n";
-            $ftp->put($upfile);
+	    if (!$readonly) {
+               $ftp->put($upfile);
+            }
             if ($ftpsleep) { usleep($ftpsleep); }
             $nummidi++;
          }
@@ -608,15 +612,19 @@ sub upgradeFiles
          if (   ! $nobackup
              && doesFileExist($ftp, $custombase . UPGRADEDIR . "/". UPGRADEFILE) )
          {
-            ftpcopy($ftp, UPGRADEFILE, UPGRADEFILE . $backupext);
+	    if (!$readonly) {
+               ftpcopy($ftp, UPGRADEFILE, UPGRADEFILE . $backupext);
+            }
             myprint DEBUG, "backing up " . UPGRADEFILE . "\n";
             if ($ftpsleep) { usleep($ftpsleep); }
          }
          writeDTA($existingupgraderef, $upgradedta);
 
          myprint NORMAL, "uploading new " . UPGRADEFILE . " to " . $custombase . UPGRADEDIR . "\n";
-         $ftp->put( $upgradedta, UPGRADEFILE )
-            or die "Cannot put " . UPGRADEFILE, $ftp->message;
+	 if (!$readonly) {
+            $ftp->put( $upgradedta, UPGRADEFILE )
+               or die "Cannot put " . UPGRADEFILE, $ftp->message;
+         }
          if ($ftpsleep) { usleep($ftpsleep); }
          $numdta++;
 
@@ -632,16 +640,20 @@ sub upgradeFiles
                 && ! doesFileExist($ftp, $upgradedta->{'remote'} . ORIGEXT) )
             {
                myprint DEBUG, "saving original " . SONGFILE . "\n";
-               ftpcopy($ftp, $upgradedta->{'remote'},
-                       $upgradedta->{'remote'} . ORIGEXT);
+	       if (!$readonly) {
+                  ftpcopy($ftp, $upgradedta->{'remote'},
+                          $upgradedta->{'remote'} . ORIGEXT);
+               }
                if ($ftpsleep) { usleep($ftpsleep); }
             }
             # make backup of current songs.dta on the ps3
             elsif (! $nobackup)
             {
                myprint DEBUG, "backing up " . SONGFILE . "\n";
-               ftpcopy($ftp, $upgradedta->{'remote'},
-                       $upgradedta->{'remote'} . $backupext);
+	       if (!$readonly) {
+                  ftpcopy($ftp, $upgradedta->{'remote'},
+                          $upgradedta->{'remote'} . $backupext);
+               }
                if ($ftpsleep) { usleep($ftpsleep); }
             }
 
@@ -650,9 +662,11 @@ sub upgradeFiles
 
             # upload it to the server
             myprint NORMAL, "uploading new " . SONGFILE . " to $upgradedta->{'remote'}\n";
-            $ftp->put($upgradedta->{'local'}, $upgradedta->{'remote'})
-               or die "Failed to rename " . SONGFILE . " to "
-                      . SONGFILE . $backupext, $ftp->message;
+	    if (!$readonly) {
+               $ftp->put($upgradedta->{'local'}, $upgradedta->{'remote'})
+                  or die "Failed to rename " . SONGFILE . " to "
+                         . SONGFILE . $backupext, $ftp->message;
+            }
             if ($ftpsleep) { usleep($ftpsleep); }
             $numdta++;
 
@@ -833,7 +847,9 @@ sub installFiles
          foreach my $updir (@uploadlist)
          {
             myprint NORMAL, "uploading song from " . $updir . "\n";
-            rput_dir($ftp, $updir, $abssongdir);
+	    if (!$readonly) {
+               rput_dir($ftp, $updir, $abssongdir);
+            }
          }
 
 
@@ -846,21 +862,27 @@ sub installFiles
              && ! doesFileExist($ftp, $origfile) )
          {
             myprint DEBUG, "saving original " . SONGFILE . "\n";
-            ftpcopy($ftp, SONGFILE, SONGFILE . ORIGEXT);
+	    if (!$readonly) {
+               ftpcopy($ftp, SONGFILE, SONGFILE . ORIGEXT);
+            }
             if ($ftpsleep) { usleep($ftpsleep); }
          }
          # make backup of current songs.dta
          elsif (! $nobackup)
          {
             myprint DEBUG, "backing up existing " . SONGFILE . "\n";
-            ftpcopy($ftp, SONGFILE, SONGFILE . $backupext);
+	    if (!$readonly) {
+               ftpcopy($ftp, SONGFILE, SONGFILE . $backupext);
+            }
             if ($ftpsleep) { usleep($ftpsleep); }
          }
          writeDTA($existingsongref, $songdta);
 
          myprint NORMAL, "uploading new " . SONGFILE . "\n";
-         $ftp->put( $songdta, SONGFILE )
-            or die "Cannot put " . SONGFILE, $ftp->message;
+	 if (!$readonly) {
+            $ftp->put( $songdta, SONGFILE )
+               or die "Cannot put " . SONGFILE, $ftp->message;
+         }
          if ($ftpsleep) { usleep($ftpsleep); }
          $numdta++;
 
@@ -1201,8 +1223,10 @@ sub ftpcopy($$$)
       or die "Cannot get $src to $tmp! ", $ftp->message;
    if ($ftpsleep) { usleep($ftpsleep); }
 
-   $ftp->put($tmp, $dst)
-      or die "Failed to put $tmp to $dst! ", $ftp->message;
+   if (!$readonly) {
+      $ftp->put($tmp, $dst)
+         or die "Failed to put $tmp to $dst! ", $ftp->message;
+   }
 }
 
 # 
@@ -1268,11 +1292,15 @@ sub rput_dir($$$)
    }
    $crdir = $ddir . "/" . $crdir;
 
-   $ftp->mkdir($crdir);
+   if (!$readonly) {
+      $ftp->mkdir($crdir);
+   }
    $ftp->cwd($crdir);
 
    chdir($sdir);
-   $ftp->rput();
+   if (!$readonly) {
+      $ftp->rput();
+   }
 
    chdir $origdir;
    $ftp->cwd($origftpdir);
@@ -1759,8 +1787,6 @@ Upgrade:    --search <searchpath>
             --dtalist <DTA CSV list>
             --mididir <encrypted midi directory>
 
-Test:       --test
-
 Help:       --help | --man
 
 Functional: --custombase <PS3 custom base directory (default /dev_hdd0/game/BLUS30463/USRDIR/HMX0756/)>
@@ -1768,11 +1794,12 @@ Functional: --custombase <PS3 custom base directory (default /dev_hdd0/game/BLUS
             --port <PS3 FTP port (default 21)>
             --user <PS3 FTP user (default anonymous)>
             --pass <PS3 FTP password (default anonymous)>
-            --ftpsleep <microseconds to sleep between ftp operations (default 100)>
+            --ftpsleep <microseconds to sleep between ftp operations (default 100000 or 100ms)>
             --ftptimeout <seconds to timeout on ftp operations (default 120)>
             --noorig
             --nobackup
             --reinstall
+            --readonly
             --tmptemplate <temporary filename template (default /tmp/c3ps3toolXXXXXX)>
 
 Output:     --verbose
@@ -1790,11 +1817,11 @@ c3ps3tool.pl --install song1.rar ... songN.rar
 
 c3ps3tool.pl --upgrade path/to/rbhp/upgradedir
 
+c3ps3tool.pl --dtaparse song.dta
+
 c3ps3tool.pl --uninstall songtoremove
 
 c3ps3tool.pl --unupgrade songtodowngrade
-
-c3ps3tool.pl --test
 
 c3ps3tool.pl [--help | --man]
 
@@ -1847,6 +1874,10 @@ Before modifying the songs.dta or upgrades.dta files, the program will make a ba
 =item C<--reinstall>
 
 By default the program will not overwrite an existing song/upgrade. This option will force it to overwrite the existing song, which may be useful if the program crashed or if a newer version of the upgrade is released.
+
+=item C<--readonly>
+
+By default the program will perform write operations to the destination PS3. This option will force it to only read from the PS3, allowing you to test and make sure everything will work OK before committing to the changes.
 
 =item C<--tmptemplate>
 
