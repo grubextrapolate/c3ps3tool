@@ -787,6 +787,11 @@ sub installFiles
                @{$existingsongref} = grep { $_->{'shortname'} ne $song->{'shortname'} } @{$existingsongref};
             }
 
+            my $closematches = findByClosename($existingsongref, $song->{'closename'});
+	    foreach my $closematch (@{$closematches}) {
+               myprint NORMAL, "WARNING: song " . $song->{'shortname'} . " has near match with existing song $closematch->{'shortname'}!\n";
+            }
+
             # check whether the song has a non-numeric song_id, and if so it
             # will replace it with a proper numeric one. PS3 will work OK with
             # a non-numeric ID, but scores won't save correctly unless it is
@@ -1395,6 +1400,21 @@ sub findkey
 }
 
 # #############################################################################
+# findByClosename
+#   - search for a particular song by its closename (simplified artist/song
+#     combination), returning the list of matching songs.
+# #############################################################################
+sub findByClosename
+{
+   my $arref     = shift;
+   my $searchkey = shift;
+
+   my @results   = grep { lc($_->{'closename'}) eq $searchkey } @{$arref};
+
+   return \@results;
+}
+
+# #############################################################################
 # dumpDTA
 #   - search for a particular song by name, returning the hashref for its
 #     contents if found and undef if not.
@@ -1775,16 +1795,17 @@ sub parseDTAString
 	 $startcomment = "";
          $tmphash{"_raw"} = $token;
 #         myprint DEBUG, "name=$1\n";
-         push @retarray, \%tmphash;
 	 my $closename = buildCloseName($tmphash{'artist'}, $tmphash{'songname'});
 	 my $closematch = $closenames{$closename};
 	 if ($closematch) {
-            myprint NORMAL, "duplicate closename found with $closematch and $tmphash{'shortname'}\n";
+            myprint NORMAL, "duplicate closename found with $closematch and $tmphash{'shortname'} while parsing dta\n";
          } else {
             myprint DEBUG, "new closename $closename for $tmphash{'shortname'}\n";
 	    $closenames{$closename} = $tmphash{'shortname'};
          }
+	 $tmphash{'closename'} = $closename;
 
+         push @retarray, \%tmphash;
       }
       elsif ($token =~ /^\s+/gs)
       {
