@@ -1560,6 +1560,20 @@ sub getTokens($) {
    return ($token, $remainder, $startcomment);
 }
 
+sub buildCloseName($$) {
+   my $artist = shift;
+   my $song = shift;
+   my $closename = "";
+
+   $artist = lc($artist);
+   $artist =~ s/[\.\?\!\_\-\(\)\:\'\"]+//gs;
+   $song = lc($song);
+   $song =~ s/[\.\?\!\_\-\(\)\:\'\"]+//gs;
+   $closename = $artist . " " . $song;
+
+   return $closename;
+}
+
 # #############################################################################
 # parseDTAString
 #   - parses contents of given string, returning an array reference to a list
@@ -1576,6 +1590,10 @@ sub parseDTAString
    # song in the .dta file.
    # --------------------------------------------------------------------------
    my @retarray;
+
+   # for debugging, build simplified artist+song combos to find duplicates with
+   # different shortnames or paths
+   my %closenames;
 
 #   myprint DEBUG, "tokenize...\n";
 
@@ -1660,6 +1678,24 @@ sub parseDTAString
 #               myprint DEBUG, "ERROR: missing song_id field in $filename\n";
             }
          }
+         if ($token =~ /\(\s*['"]?artist['"]?\s+(['"]?[a-zA-Z0-9öüÿÆ'_\-!\.\&\?\/,\s\(\)\:]+['"]?)\s*\)/s)
+         {
+            $tmphash{"artist"} = $1;
+            myprint DEBUG, "found artist " . $tmphash{"artist"} . "\n";
+         }
+         else
+         {
+            myprint NORMAL, "ERROR: missing artist field in $filename\n";
+         }
+         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!]+['"]?)\s+\(\s*['"]?name['"]?\s+(['"]?[a-zA-Z0-9öüÿÆ'_\-!\.\&\?\/,\s\(\)\:]+['"]?)\s*\)/s)
+         {
+            $tmphash{"songname"} = $2;
+            myprint DEBUG, "found songname " . $tmphash{"songname"} . "\n";
+         }
+         else
+         {
+            myprint NORMAL, "ERROR: missing songname field in $filename\n";
+         }
          if ($token =~ /\(['"]?rating['"]?\s+([0-9]+)\s*\)/s)
          {
             $tmphash{"rating"} = $1;
@@ -1740,6 +1776,14 @@ sub parseDTAString
          $tmphash{"_raw"} = $token;
 #         myprint DEBUG, "name=$1\n";
          push @retarray, \%tmphash;
+	 my $closename = buildCloseName($tmphash{'artist'}, $tmphash{'songname'});
+	 my $closematch = $closenames{$closename};
+	 if ($closematch) {
+            myprint NORMAL, "duplicate closename found with $closematch and $tmphash{'shortname'}\n";
+         } else {
+            myprint DEBUG, "new closename $closename for $tmphash{'shortname'}\n";
+	    $closenames{$closename} = $tmphash{'shortname'};
+         }
 
       }
       elsif ($token =~ /^\s+/gs)
