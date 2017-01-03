@@ -783,8 +783,13 @@ sub installFiles
          {
             if (findkey($existingsongref, $song->{'shortname'}))
             {
-               myprint NORMAL, "song " . $song->{'shortname'} . " already installed - reinstalling!\n";
-               @{$existingsongref} = grep { $_->{'shortname'} ne $song->{'shortname'} } @{$existingsongref};
+               if ($reinstall) {
+                  myprint NORMAL, "song " . $song->{'shortname'} . " already installed - reinstalling!\n";
+                  @{$existingsongref} = grep { $_->{'shortname'} ne $song->{'shortname'} } @{$existingsongref};
+               } else {
+                  myprint NORMAL, "song " . $song->{'shortname'} . " already installed - skipping!\n";
+		  next;
+               }
             }
 
             my $closematches = findByClosename($existingsongref, $song->{'closename'});
