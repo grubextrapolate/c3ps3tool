@@ -51,7 +51,7 @@ my $custombase  = "/dev_hdd0/game/BLUS30463/USRDIR/HMX0756/";
 #my $dtalist     = "PS3_DTA_LIST.csv";
 my $dtalist     = "/work/rb3custom/tools/perl/PS3_DTA_LIST.csv";
 my $mididir     = "";
-my $ip          = "192.168.1.10";
+my $ip          = "192.168.1.30";
 #my $ip          = "localhost";
 my $port        = 21;
 my $user        = "anonymous";
@@ -756,18 +756,35 @@ sub installFiles
          # BIG FAT HACK
          # only works on linux with unrar command...unless windows has one too?
          # EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-         my $unrarcmd = "unrar x " . shell_quote($installinfo{'rar'}) . " " . $installinfo{'rardir'};
-         my $res = `$unrarcmd`;
-         myprint DEBUG, $res unless ($res =~ /All OK/);
+	 my @updirs;
+	 if ($installinfo{'rar'} =~ /\.rar$/i) {
+            my $unrarcmd = "unrar x " . shell_quote($installinfo{'rar'}) . " " . $installinfo{'rardir'};
+            my $res = `$unrarcmd`;
+            myprint DEBUG, $res unless ($res =~ /All OK/);
 
-         # should be exactly two creates - one for base, one for base/gen. this is a
-         # hacky way to skip the first despite it being what we want and just cut it
-         # off the gen line should the order be pathological.
-         my @updirs = map { /Creating\s+(\S+)\/gen\s+OK/ ? $1 : () } split(/\n/, $res);
-         foreach my $updir (@updirs)
-         {
-            myprint DEBUG, "updir = $updir\n";
-         }
+            # should be exactly two creates - one for base, one for base/gen. this is a
+            # hacky way to skip the first despite it being what we want and just cut it
+            # off the gen line should the order be pathological.
+            @updirs = map { /Creating\s+(\S+)\/gen\s+OK/ ? $1 : () } split(/\n/, $res);
+            foreach my $updir (@updirs)
+            {
+               myprint DEBUG, "updir = $updir\n";
+            }
+
+	 } elsif ($installinfo{'rar'} =~ /\.zip$/i) {
+            my $unzipcmd = "unzip -n -d " . $installinfo{'rardir'} . " " . shell_quote($installinfo{'rar'});
+            my $res = `$unzipcmd`;
+            myprint DEBUG, $res if ($res =~ /cannot find zipfile directory/);
+
+            # should be exactly two creates - one for base, one for base/gen. this is a
+            # hacky way to skip the first despite it being what we want and just cut it
+            # off the gen line should the order be pathological.
+            @updirs = map { /creating:\s+(\S+)\/gen/ ? $1 : () } split(/\n/, $res);
+            foreach my $updir (@updirs)
+            {
+               myprint DEBUG, "updir = $updir\n";
+            }
+	 }
 
          my $newsong = File::Spec->catfile($installinfo{'rardir'}, "songs.dta");
 
@@ -1433,13 +1450,13 @@ sub dumpDTA
    foreach my $child ( @{ $tree } )
    {
       myprint NORMAL, "shortname=\"" . $child->{"shortname"} . "\"\n";
-      foreach my $key ( sort keys %{ $child })
+      foreach my $key ( sort { ($a =~ /^_/ && $b =~ /^_/) ? $a cmp $b : $a =~ /^_/ ? 1 : $b =~ /^_/ ? -1 : $a cmp $b } keys %{ $child })
       {
-         if (($key ne "_raw") && ($key ne "_comment"))
+         if (($key ne "_raw") && ($key ne "_comment") && ($key ne "shortname"))
          {
             myprint NORMAL, "$key=\"" . $child->{$key} . "\"\n";
          }
-         else
+         elsif ($key ne "shortname")
          {
             # unescape any delimiters within comments
             my $song = $child->{$key};
@@ -1521,9 +1538,13 @@ sub parseDTA
 
    # slurp up the input file, throwing away comments
    open INFILE, $filename or die "can't open input file \"$filename\": $!\n";
-   while($line = <INFILE>)
+   my $file_content = do { local $/; <INFILE> };
+   $file_content =~ s/(\015\012?)/\012/gs;
+
+   foreach my $line (split(/\n/, $file_content))
    {
       chomp $line;
+
       # If we find a comment, we need to give it some special handling. First
       # split the line into a pre-comment part and the comment itself, then
       # go through the comment and escape any delimiters with a leading
@@ -1591,9 +1612,9 @@ sub buildCloseName($$) {
    my $closename = "";
 
    $artist = lc($artist);
-   $artist =~ s/[\.\?\!\_\-\(\)\:\'\"]+//gs;
+   $artist =~ s/[\.\?\!\_\-\(\)\:\'\"\&\+]+//gs;
    $song = lc($song);
-   $song =~ s/[\.\?\!\_\-\(\)\:\'\"]+//gs;
+   $song =~ s/[\.\?\!\_\-\(\)\:\'\"\&\+]+//gs;
    $closename = $artist . " " . $song;
 
    return $closename;
@@ -1712,7 +1733,7 @@ sub parseDTAString
          {
             myprint NORMAL, "ERROR: missing artist field in $filename\n";
          }
-         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!]+['"]?)\s+\(\s*['"]?name['"]?\s+(['"]?[a-zA-Z0-9öüÿÆ'_\-!\.\&\?\/,\s\(\)\:]+['"]?)\s*\)/s)
+         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!]+['"]?)\s+\(\s*['"]?name['"]?\s+(['"]?[a-zA-Z0-9öüÿÆ+'_\-!\.\&\?\/,\s\(\)\:]+['"]?)\s*\)/s)
          {
             $tmphash{"songname"} = $2;
             myprint DEBUG, "found songname " . $tmphash{"songname"} . "\n";
@@ -1720,6 +1741,7 @@ sub parseDTAString
          else
          {
             myprint NORMAL, "ERROR: missing songname field in $filename\n";
+            myprint NORMAL, $s;
          }
          if ($token =~ /\(['"]?rating['"]?\s+([0-9]+)\s*\)/s)
          {
