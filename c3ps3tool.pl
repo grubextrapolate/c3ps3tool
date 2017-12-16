@@ -1724,24 +1724,33 @@ sub parseDTAString
 #               myprint DEBUG, "ERROR: missing song_id field in $filename\n";
             }
          }
-         if ($token =~ /\(\s*['"]?artist['"]?\s+(['"]?[a-zA-Z0-9öüÿÆ'_\-!\.\&\?\/,\s\(\)\:]+['"]?)\s*\)/s)
+         if ($token =~ /\(\s*['"]?artist['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF'_\-!\.\&\?\/,\s\(\)\:\*\#\+~]+['"]?)\s*\)/s)
          {
             $tmphash{"artist"} = $1;
             myprint DEBUG, "found artist " . $tmphash{"artist"} . "\n";
          }
          else
          {
-            myprint NORMAL, "ERROR: missing artist field in $filename\n";
+            if (!$isUpgrade) {
+               myprint NORMAL, "ERROR: missing artist field in $filename\n";
+            } else {
+               myprint NORMAL, "missing artist field in upgrade $filename\n";
+            }
          }
-         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!]+['"]?)\s+\(\s*['"]?name['"]?\s+(['"]?[a-zA-Z0-9öüÿÆ+'_\-!\.\&\?\/,\s\(\)\:]+['"]?)\s*\)/s)
+         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!]+['"]?)\s+\(\s*['"]?name['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF+'_\-!\.\&\?\/,\s\(\)\:\*\#\+~]+['"]?)\s*\)/s)
          {
             $tmphash{"songname"} = $2;
             myprint DEBUG, "found songname " . $tmphash{"songname"} . "\n";
          }
          else
          {
-            myprint NORMAL, "ERROR: missing songname field in $filename\n";
-            myprint NORMAL, $s;
+
+            if (!$isUpgrade) {
+               myprint NORMAL, "ERROR: missing songname field in $filename\n";
+               myprint NORMAL, $s;
+            } else {
+               myprint NORMAL, "missing songname field in upgrade $filename\n";
+            }
          }
          if ($token =~ /\(['"]?rating['"]?\s+([0-9]+)\s*\)/s)
          {
@@ -1822,6 +1831,14 @@ sub parseDTAString
 	 $startcomment = "";
          $tmphash{"_raw"} = $token;
 #         myprint DEBUG, "name=$1\n";
+	 if ($isUpgrade) {
+            if (!$tmphash{'artist'}) {
+               $tmphash{'artist'} = "upgrade";
+            }
+            if (!$tmphash{'songname'}) {
+               $tmphash{'songname'} = $tmphash{'shortname'};
+            }
+	 }
 	 my $closename = buildCloseName($tmphash{'artist'}, $tmphash{'songname'});
 	 my $closematch = $closenames{$closename};
 	 if ($closematch) {
