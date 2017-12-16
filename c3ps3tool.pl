@@ -1537,9 +1537,11 @@ sub parseDTA
    }
 
    # slurp up the input file, throwing away comments
-   open INFILE, $filename or die "can't open input file \"$filename\": $!\n";
+   open INFILE, "<:encoding(utf8)", $filename or die "can't open input file \"$filename\": $!\n";
    my $file_content = do { local $/; <INFILE> };
    $file_content =~ s/(\015\012?)/\012/gs;
+   $file_content =~ s/^\x{FEFF}//;
+   close INFILE;
 
    foreach my $line (split(/\n/, $file_content))
    {
@@ -1568,7 +1570,6 @@ sub parseDTA
          $s .= $line . "\n";
       }
    }
-   close INFILE;
 
    # returns an array of hash references, where each hash represents a single
    # song in the .dta file.
@@ -1724,7 +1725,7 @@ sub parseDTAString
 #               myprint DEBUG, "ERROR: missing song_id field in $filename\n";
             }
          }
-         if ($token =~ /\(\s*['"]?artist['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF'_\-!\.\&\?\/,\s\(\)\:\*\#\+~]+['"]?)\s*\)/s)
+         if ($token =~ /\(\s*['"]?artist['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF'_\-!\.\&\?\/,\s\(\)\:\*\#\+~\$\\]+['"]?)\s*\)/s)
          {
             $tmphash{"artist"} = $1;
             myprint DEBUG, "found artist " . $tmphash{"artist"} . "\n";
@@ -1733,11 +1734,12 @@ sub parseDTAString
          {
             if (!$isUpgrade) {
                myprint NORMAL, "ERROR: missing artist field in $filename\n";
+               myprint NORMAL, $token;
             } else {
                myprint NORMAL, "missing artist field in upgrade $filename\n";
             }
          }
-         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!]+['"]?)\s+\(\s*['"]?name['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF+'_\-!\.\&\?\/,\s\(\)\:\*\#\+~]+['"]?)\s*\)/s)
+         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!]+['"]?)\s+\(\s*['"]?name['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF+'_\-!\.\&\?\/,\s\(\)\:\*\#\+~\$\\]+['"]?)\s*\)/s)
          {
             $tmphash{"songname"} = $2;
             myprint DEBUG, "found songname " . $tmphash{"songname"} . "\n";
@@ -1747,7 +1749,7 @@ sub parseDTAString
 
             if (!$isUpgrade) {
                myprint NORMAL, "ERROR: missing songname field in $filename\n";
-               myprint NORMAL, $s;
+               myprint NORMAL, $token;
             } else {
                myprint NORMAL, "missing songname field in upgrade $filename\n";
             }
