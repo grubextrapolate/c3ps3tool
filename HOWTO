@@ -1,0 +1,17 @@
+Harmonies Bulk Upgrade HOWTO by Samyaza
+
+1. On your PS3, open multiMAN.
+2. Open C3 CON Tools, Setlist Manager -> File -> Scan PS3 to Create Setlist, then wait for it to finish scanning and generating your setlist.
+3. Go to the C3 CON Tools folder, then the "bin" folder, and copy PS3_DATA_LIST.csv onto a flash drive or something.
+4. Boot into a Linux distribution of your choice. I used Ubuntu, which is probably your best bet if you've never used one before.
+5. Go to https://github.com/FujiSkunk/rbhp/, click the green "clone or download" button on the upper right, and choose "Download ZIP". 
+6. Boot into a Linux distribution of your choice. I used Ubuntu, which is probably your best bet if you've never used one before.
+7. Download https://github.com/a...h22/make_npdatathe same way you did for RBHP. 
+8. Extract it, open the "Linux" folder, right-click on an empty space in the folder, and choose to open a command prompt there.
+9. Type "make" in the command prompt, and wait for it to finish compiling.
+10. Open c3ps3tool.pl in your editor of choice and change the settings. The main ones you should need are "my $ip", which you should change to your PS3's IP in multiMAN, and "my $npdataPath", which you should change to wherever you put the compiled make_npdata.
+11. Open a command prompt in your c3ps3tool directory and type "./setup.sh". It'll install the Perl modules the script needs.
+12. Put your PS3_DATA_LIST.csv file and the "rbhp-master" folder in the same folder as c3ps3tool.
+13. Type "./c3ps3tool.pl --dtalist PS3_DTA_LIST.csv --search /rbhp/" in the command prompt, then wait for it to finish.
+14. Enjoy your harmonies upgrades!
+
