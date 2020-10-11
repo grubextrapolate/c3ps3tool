@@ -17,6 +17,8 @@ use Getopt::Long;
 use Pod::Usage;
 use Text::Balanced qw(extract_bracketed);
 use Time::HiRes qw(usleep);
+use Encode;
+use Storable qw(dclone);
 
 # constants/default values
 use constant VERSION     => "0.2.0";
@@ -35,6 +37,7 @@ use constant UPGRADE     => "UPGRADE";
 use constant UNINSTALL   => "UNINSTALL";
 use constant UNUPGRADE   => "UNUPGRADE";
 use constant DTAPARSE    => "DTAPARSE";
+use constant DTADIFF     => "DTADIFF";
 use constant ENCRYPT     => "ENCRYPT";
 
 # debug print levels.
@@ -42,6 +45,8 @@ use constant QUIET       => 0; # only print on error
 use constant NORMAL      => 1; # normal run output
 use constant DEBUG       => 2; # extra debug output
 use constant VERYVERBOSE => 3; # even more extra debug output
+
+binmode STDOUT, ":utf8";
 
 # constants used throughout
 my $backupext   = "." . strftime("%Y%m%d%H%M%S", localtime(time));
@@ -137,6 +142,7 @@ GetOptions("custombase=s"  => \$custombase,
            "uninstall"     => sub { checkSetMode(UNINSTALL); },
            "unupgrade"     => sub { checkSetMode(UNUPGRADE); },
            "dtaparse"      => sub { checkSetMode(DTAPARSE); },
+           "dtadiff"       => sub { checkSetMode(DTADIFF); },
            "encrypt"       => sub { checkSetMode(ENCRYPT); },
            "version"       => sub { print "version " . VERSION . "\n"; exit(0); },
            "help"          => sub { pod2usage( -verbose => 1, -exitval => 0 ); },
@@ -145,7 +151,7 @@ GetOptions("custombase=s"  => \$custombase,
 
 if ($logfile)
 {
-   open($logfh, ">", $logfile) or die "cannot open $logfile for writing!\n: $!";
+   open($logfh, ">:utf8", $logfile) or die "cannot open $logfile for writing!\n: $!";
 }
 
 myprint DEBUG, "mode=$mode, search=$searchpath\n";
@@ -182,6 +188,10 @@ elsif ($mode eq UNINSTALL)
 elsif ($mode eq DTAPARSE)
 {
    dtaparse();
+}
+elsif ($mode eq DTADIFF)
+{
+   dtadiff();
 }
 elsif ($mode eq ENCRYPT)
 {
@@ -561,7 +571,9 @@ sub upgradeFiles
                if ($res ne File::Spec->catfile($upgrade, $upgradeinfo{'midi'}))
                {
                   die "unable to encrypt $upgradeinfo{'midi_unenc'} to $upgradeinfo{'midi'}!\n";
-               }
+               } else {
+                  $upgradeinfo{'midi'} = File::Spec->catfile($upgrade, $upgradeinfo{'midi'});
+	       }
             }
             else
             {
@@ -729,6 +741,7 @@ sub installFiles
          or die "Cannot get " . SONGFILE, $ftp->message;
 
       my $existingsongref = parseDTA($songdta, 0, 0);
+      my $beforeDta = dclone($existingsongref);
       my $numexisting = @{$existingsongref};
       myprint DEBUG, "existing custom dir has " . $numexisting . " songs\n";
 
@@ -798,11 +811,15 @@ sub installFiles
 
          foreach my $song ( @{ $newsongref } )
          {
-            if (findkey($existingsongref, $song->{'shortname'}))
+            my $found = findkey($existingsongref, $song->{'shortname'});
+	    if ($found)
             {
                if ($reinstall) {
                   myprint NORMAL, "song " . $song->{'shortname'} . " already installed - reinstalling!\n";
                   @{$existingsongref} = grep { $_->{'shortname'} ne $song->{'shortname'} } @{$existingsongref};
+		  if ($found->{'song_path'} ne $song->{'song_path'}) {
+                     myprint NORMAL, "WARNING: song path changing from " . $found->{'song_path'} . " to " . $song->{'song_path'} . " as part of reinstall!\n";
+		  }
                } else {
                   myprint NORMAL, "song " . $song->{'shortname'} . " already installed - skipping!\n";
 		  next;
@@ -811,7 +828,17 @@ sub installFiles
 
             my $closematches = findByClosename($existingsongref, $song->{'closename'});
 	    foreach my $closematch (@{$closematches}) {
-               myprint NORMAL, "WARNING: song " . $song->{'shortname'} . " has near match with existing song $closematch->{'shortname'}!\n";
+               myprint NORMAL, "WARNING: song " . $song->{'shortname'} . " has closename match with existing song $closematch->{'shortname'}!\n";
+            }
+
+            my $songidmatches = findBySongId($existingsongref, $song->{'song_id'});
+	    foreach my $songidmatch (@{$songidmatches}) {
+               myprint NORMAL, "WARNING: song " . $song->{'shortname'} . " has song_id match with existing song $songidmatch->{'shortname'}!\n";
+            }
+
+            my $songpathmatches = findBySongPath($existingsongref, $song->{'song_path'});
+	    foreach my $songpathmatch (@{$songpathmatches}) {
+               myprint NORMAL, "WARNING: song " . $song->{'shortname'} . " has song_path match with existing song $songpathmatch->{'shortname'}!\n";
             }
 
             # check whether the song has a non-numeric song_id, and if so it
@@ -956,12 +983,145 @@ sub dtaparse
       dumpDTA($arref);
       myprint DEBUG, "\n";
 
-#      writeDTA($arref, "tmp.dta");
+      writeDTA($arref, "tmp.dta");
    }
 
    return;
 }
 
+sub formatDate
+{
+   my $fname = shift;
+   $fname =~ s/^(.*\/?)(songs\.dta.*)$/$2/;
+   $fname =~ s/songs\.dta\.//;
+
+   if ($fname eq "songs.dta") {
+   } elsif ($fname eq "") {
+   } else {
+      $fname =~ s/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/$1-$2-$3 $4:$5:$6/;
+   }
+
+   return $fname;
+}
+# short name.
+# 
+# #############################################################################
+sub dtadiff
+{
+   my @sorted = sort { if ($a =~ /songs.dta$/) { 1 } elsif ($a =~ /songs.dta.orig$/) { -1 } elsif ($b =~ /songs.dta$/) { -1 } elsif ($b =~ /songs.dta.orig$/) { 1 } else { $a cmp $b } } @ARGV;
+
+   my @result;
+   my $files = scalar @sorted;
+   my $infile1 = $sorted[0];
+   my $arref1 = parseDTA($infile1);
+   my $datepart1 = formatDate($infile1);
+   for (my $i = 1; $i < $files; $i++) {
+      my $infile2 = $sorted[$i];
+      myprint DEBUG, "diff " . $infile1 . " " . $infile2 . "\n";
+
+      my $arref2 = parseDTA($infile2);
+      my $datepart2 = formatDate($infile2);
+
+      my $datestr;
+      if ($infile1 =~ /songs.dta.orig$/) {
+	      $datestr = "2014-11-23 12:51:00";
+      } else {
+	      $datestr = $datepart1;
+      }
+
+      my $diff = findDtaChanges($arref1, $arref2);
+
+      foreach my $song (sort { $b->{'artist'} cmp $a->{'artist'} || $b->{'songname'} cmp $a->{'songname'} } @{$diff->{'removed'}}) {
+         myprint DEBUG, $datestr . "\tREMOVED\t" . $song->{'artist'} . "\t" . $song->{'songname'} . "\n";
+         unshift @result, $datestr . "\tREMOVED\t" . $song->{'artist'} . "\t" . $song->{'songname'};
+      }
+
+      foreach my $song (sort { $b->{'artist'} cmp $a->{'artist'} || $b->{'songname'} cmp $a->{'songname'} } @{$diff->{'updated'}}) {
+         myprint DEBUG, $datestr . "\tUPDATED\t" . $song->{'artist'} . "\t" . $song->{'songname'} . "\n";
+         unshift @result, $datestr . "\tUPDATED\t" . $song->{'artist'} . "\t" . $song->{'songname'};
+      }
+
+      foreach my $song (sort { $b->{'artist'} cmp $a->{'artist'} || $b->{'songname'} cmp $a->{'songname'} } @{$diff->{'added'}}) {
+         myprint DEBUG, $datestr . "\tADDED\t" . $song->{'artist'} . "\t" . $song->{'songname'} . "\n";
+         unshift @result, $datestr . "\tADDED\t" . $song->{'artist'} . "\t" . $song->{'songname'};
+      }
+
+      $infile1 = $infile2;
+      $arref1 = $arref2;
+      $datepart1 = $datepart2;
+   }
+
+   print "" . (join "\n", @result) . "\n";
+
+   return;
+}
+
+sub stripRawData {
+   my $inp = shift;
+   $inp =~ s/[)('" \n\t\r]+//gs;
+   return $inp;
+}
+
+sub findDtaChanges
+{
+   my $file1 = shift;
+   my $file2 = shift;
+   my @added;
+   my @removed;
+   my @updated;
+
+
+   foreach my $song ( @{ $file1 } )
+   {
+      my $closematches = findByClosename($file2, $song->{'closename'});
+      if ($closematches && ((scalar @{$closematches}) == 1))
+      {
+	 my $song1 = @{$closematches}[0];
+	 if (stripRawData($song->{'_raw'}) ne stripRawData($song1->{'_raw'})) {
+	    push @updated, $song;
+	 }
+      } elsif ($closematches && ((scalar @{$closematches}) >= 1)) { # need to compare shortnames too
+	 my $matched = 0;
+	 foreach my $testsong (@{$closematches}) {
+            if ($song->{'shortname'} eq $testsong->{'shortname'}) {
+               $matched = $testsong;
+               next;
+	    }
+	 }
+	 if ($matched) {
+            if (stripRawData($song->{'_raw'}) ne stripRawData($matched->{'_raw'})) {
+               push @updated, $song;
+            }
+	 } else {
+	    push @removed, $song;
+	 }
+
+      } else {
+	 push @removed, $song;
+      }
+   }
+
+   foreach my $song ( @{ $file2 } )
+   {
+      my $closematches = findByClosename($file1, $song->{'closename'});
+      if ($closematches && ((scalar @{$closematches}) == 1))
+      {
+
+      } elsif ($closematches && ((scalar @{$closematches}) >= 1)) { # need to compare shortnames too?
+
+      } else {
+	 push @added, $song;
+      }
+   }
+
+   my %result;
+   $result{'added'} = \@added;
+   $result{'updated'} = \@updated;
+   $result{'removed'} = \@removed;
+
+   return \%result;
+
+}
 
 # short name.
 # 
@@ -995,7 +1155,7 @@ sub encryptFile
    else
    {
       myprint NORMAL, "failed!\n";
-      myprint DEBUG, $npdataCmd;
+      myprint DEBUG, $npdataCmd . "\n";
       myprint DEBUG, $res;
       $outfile = "";
    }
@@ -1437,6 +1597,36 @@ sub findByClosename
 }
 
 # #############################################################################
+# findBySongId
+#   - search for a particular song by its song_id, returning the list of
+#     matching songs.
+# #############################################################################
+sub findBySongId
+{
+   my $arref     = shift;
+   my $searchkey = shift;
+
+   my @results   = grep { $_->{'song_id'} eq $searchkey } @{$arref};
+
+   return \@results;
+}
+
+# #############################################################################
+# findBySongPath
+#   - search for a particular song by its path (folder name), returning the
+#     list of matching songs.
+# #############################################################################
+sub findBySongPath
+{
+   my $arref     = shift;
+   my $searchkey = shift;
+
+   my @results   = grep { $_->{'song_path'} eq $searchkey } @{$arref};
+
+   return \@results;
+}
+
+# #############################################################################
 # dumpDTA
 #   - search for a particular song by name, returning the hashref for its
 #     contents if found and undef if not.
@@ -1481,7 +1671,7 @@ sub writeDTA
    my $tree    = shift;
    my $outfile = shift;
 
-   open OUTFILE, ">$outfile" or die "can't open output file \"$outfile\": $!\n";
+   open OUTFILE, ">:utf8", $outfile or die "can't open output file \"$outfile\": $!\n";
    foreach my $entry ( @{ $tree } )
    {
       # if song had leading comment, write it
@@ -1537,7 +1727,7 @@ sub parseDTA
    }
 
    # slurp up the input file, throwing away comments
-   open INFILE, "<:encoding(utf8)", $filename or die "can't open input file \"$filename\": $!\n";
+   open INFILE, "<:utf8", $filename or die "can't open input file \"$filename\": $!\n";
    my $file_content = do { local $/; <INFILE> };
    $file_content =~ s/(\015\012?)/\012/gs;
    $file_content =~ s/^\x{FEFF}//;
@@ -1613,9 +1803,9 @@ sub buildCloseName($$) {
    my $closename = "";
 
    $artist = lc($artist);
-   $artist =~ s/[\.\?\!\_\-\(\)\:\'\"\&\+]+//gs;
+   $artist =~ s/[\.\?\!\_\-\(\)\:\'\"\&\+\,]+//gs;
    $song = lc($song);
-   $song =~ s/[\.\?\!\_\-\(\)\:\'\"\&\+]+//gs;
+   $song =~ s/[\.\?\!\_\-\(\)\:\'\"\&\+\,]+//gs;
    $closename = $artist . " " . $song;
 
    return $closename;
@@ -1641,6 +1831,8 @@ sub parseDTAString
    # for debugging, build simplified artist+song combos to find duplicates with
    # different shortnames or paths
    my %closenames;
+   my %songids;
+   my %songpaths;
 
 #   myprint DEBUG, "tokenize...\n";
 
@@ -1663,7 +1855,7 @@ sub parseDTAString
          # cache the rest in the _raw key, then pick out a few more interesting
          # fields.
          # --------------------------------------------------------------------
-         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!]+['"]?)\s*/s)
+         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!\.]+['"]?)\s*/s)
          {
             $tmphash{"shortname"} = $1;
             if ($tmphash{"shortname"} ne lc($tmphash{"shortname"}))
@@ -1708,10 +1900,18 @@ sub parseDTAString
          }
          if ($token =~ /\(['"]?song_id['"]?\s+([a-zA-Z0-9_\-!]+)\s*\)/s)
          {
-            $tmphash{"song_id"} = $1;
-            if ($tmphash{"song_id"} =~ /\D+/)
+            my $songid = $1;
+            $tmphash{"song_id"} = $songid;
+            if ($songid =~ /\D+/)
             {
-               myprint DEBUG, "Warning: song_id " . $tmphash{"song_id"} . " is non-numeric\n";
+               myprint DEBUG, "Warning: song_id " . $songid . " is non-numeric\n";
+            }
+	    my $idmatch = $songids{$songid};
+	    if ($idmatch) {
+               myprint NORMAL, "Warning: duplicate song_id found with $idmatch and $tmphash{'shortname'} while parsing dta\n";
+            } else {
+               myprint DEBUG, "new song_id $songid for $tmphash{'shortname'}\n";
+	       $songids{$songid} = $tmphash{'shortname'};
             }
          }
          else
@@ -1725,7 +1925,7 @@ sub parseDTAString
 #               myprint DEBUG, "ERROR: missing song_id field in $filename\n";
             }
          }
-         if ($token =~ /\(\s*['"]?artist['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF'_\-!\.\&\?\/,\s\(\)\:\*\#\+~\$\\]+['"]?)\s*\)/s)
+         if ($token =~ /\(\s*['"]?artist['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF\xC2\xB0'_\-!\.\&\?\/,\s\(\)\:\*\#\+~\$\\]+['"]?)\s*\)/s)
          {
             $tmphash{"artist"} = $1;
             myprint DEBUG, "found artist " . $tmphash{"artist"} . "\n";
@@ -1739,7 +1939,7 @@ sub parseDTAString
                myprint NORMAL, "missing artist field in upgrade $filename\n";
             }
          }
-         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!]+['"]?)\s+\(\s*['"]?name['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF+'_\-!\.\&\?\/,\s\(\)\:\*\#\+~\$\\]+['"]?)\s*\)/s)
+         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!\.]+['"]?)\s+\(\s*['"]?name['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF\xC2\xB0+'_\-!\.\&\?\/,\s\(\)\:\*\#\+~\$\\]+['"]?)\s*\)/s)
          {
             $tmphash{"songname"} = $2;
             myprint DEBUG, "found songname " . $tmphash{"songname"} . "\n";
@@ -1785,7 +1985,15 @@ sub parseDTAString
          }
          if ($token =~ /\(\s*['"]?song['"]?\s+\(\s*['"]?name['"]?\s+['"]?([a-zA-Z0-9_\-\/\.!]+)['"]?\s*\)/s)
          {
-            $tmphash{"song_path"} = $1;
+            my $songpath = $1;
+            $tmphash{"song_path"} = $songpath;
+	    my $pathmatch = $songpaths{$songpath};
+	    if ($pathmatch) {
+               myprint NORMAL, "Warning: duplicate song_path found with $pathmatch and $tmphash{'shortname'} while parsing dta\n";
+            } else {
+               myprint DEBUG, "new song_path $songpath for $tmphash{'shortname'}\n";
+	       $songpaths{$songpath} = $tmphash{'shortname'};
+            }
          }
          elsif (!$isUpgrade)
          {
