@@ -1,0 +1,124 @@
+(
+   'dv4degreessingle'
+   (
+      'name'
+      "4°"
+   )
+   (
+      'artist'
+      "Tool"
+   )
+   ('master' 1)
+   (
+      'song'
+      (
+         'name'
+         "songs/dv4degreessingle/dv4degreessingle"
+      )
+      (
+         'tracks_count'
+         (2 2 2 2 0 2)
+      )
+      (
+         'tracks'
+         (
+            (
+               'drum'
+               (0 1)
+            )
+            (
+               'bass'
+               (2 3)
+            )
+            (
+               'guitar'
+               (4 5)
+            )
+            (
+               'vocals'
+               (6 7)
+            )
+         )
+      )
+      (
+         'pans'
+         (-1.00 1.00 -1.00 1.00 -1.00 1.00 -1.00 1.00 -1.00 1.00)
+      )
+      (
+         'vols'
+         (0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00)
+      )
+      (
+         'cores'
+         (-1 -1 -1 -1 -1 -1 -1 -1 -1 -1)
+      )
+      ('vocal_parts' 1)
+      (
+         'drum_solo'
+         (
+            'seqs'
+            ('kick.cue' 'snare.cue' 'tom1.cue' 'tom2.cue' 'crash.cue')
+         )
+      )
+      (
+         'drum_freestyle'
+         (
+            'seqs'
+            ('kick.cue' 'snare.cue' 'hat.cue' 'ride.cue' 'crash.cue')
+         )
+      )
+      (mute_volume -96)
+      (mute_volume_vocals -12)
+      (hopo_threshold 170)
+   )
+   ('song_scroll_speed' 2300)
+   (
+      'bank'
+      "sfx/tambourine_bank.milo"
+   )
+   (drum_bank sfx/kit01_bank.milo)
+   ('anim_tempo' 16)
+   ('song_length' 367765)
+   ('preview' 74000 104000)
+   (
+      'rank'
+      ('drum' 242)
+      ('guitar' 267)
+      ('bass' 228)
+      ('vocals' 1)
+      ('keys' 0)
+      ('real_keys' 0)
+      ('band' 267)
+   )
+   ('genre' 'prog')
+   ('vocal_gender' 'male')
+   ('version' 30)
+   ('format' 10)
+   ('album_art' 1)
+   ('year_released' 1993)
+   ('rating' 3)
+   ('sub_genre' 'subgenre_progrock')
+   ('song_id' 1689100389)
+   ('tuning_offset_cents' 0)
+   ('guide_pitch_volume' -3.00)
+   ('game_origin' 'ugc_plus')
+   ('encoding' 'latin1')
+   (
+      'album_name'
+      "Undertow"
+   )
+   ('album_track_number' 8)
+;DO NOT EDIT THE FOLLOWING LINES MANUALLY
+;Created using Magma: C3 Roks Edition v3.3.2
+;Song authored by DenVaktare
+;Song=4°
+;Language(s)=English,
+;Karaoke=0
+;Multitrack=0
+;Convert=0
+;2xBass=0
+;RhythmKeys=0
+;RhythmBass=0
+;CATemh=0
+;ExpertOnly=0
+)
