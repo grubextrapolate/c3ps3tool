@@ -40,6 +40,7 @@ use constant UNUPGRADE => "UNUPGRADE";
 use constant DTAPARSE => "DTAPARSE";
 use constant DTADIFF => "DTADIFF";
 use constant ENCRYPT => "ENCRYPT";
+use constant CRAWL => "CRAWL";
 
 # debug print levels.
 use constant QUIET => 0;       # only print on error
@@ -53,6 +54,7 @@ binmode STDOUT, ":utf8";
 my $backupext = "." . strftime("%Y%m%d%H%M%S", localtime(time));
 
 # command-line configurable options:
+my $devicebase = "/dev_hdd0/game/";
 my $custombase = "/dev_hdd0/game/BLUS30463/USRDIR/HMX0756/";
 #my $dtalist     = "PS3_DTA_LIST.csv";
 my $dtalist = "/work/rb3custom/tools/perl/PS3_DTA_LIST.csv";
@@ -132,7 +134,8 @@ sub setSearchPath(@);
 #
 # #############################################################################
 Getopt::Long::Configure("bundling", "ignorecase_always");
-GetOptions("custombase=s" => \$custombase,
+GetOptions("devicebase=s" => \$devicebase,
+     "custombase=s"       => \$custombase,
      "dtalist=s"          => \$dtalist,
      "mididir=s"          => \$mididir,
      "ip=s"               => \$ip,
@@ -159,6 +162,7 @@ GetOptions("custombase=s" => \$custombase,
      "unupgrade"          => sub {checkSetMode(UNUPGRADE);},
      "dtaparse"           => sub {checkSetMode(DTAPARSE);},
      "dtadiff"            => sub {checkSetMode(DTADIFF);},
+     "crawl"              => sub {checkSetMode(CRAWL);},
      "encrypt"            => sub {checkSetMode(ENCRYPT);},
      "version"            => sub {
         print "version " . VERSION . "\n";
@@ -206,6 +210,9 @@ elsif ($mode eq DTADIFF) {
 elsif ($mode eq ENCRYPT) {
    encryptFiles();
 }
+elsif ($mode eq CRAWL) {
+   crawlDeviceForSongs();
+}
 else {
    die "unexpected mode!\n";
 }
@@ -218,12 +225,16 @@ END {
       myprint DEBUG, "died on $lastpath\n";
    }
    foreach my $file (@filesToRemove) {
-      unlink $file;
+      if (-e $file) {
+         unlink $file;
+      }
    }
    foreach my $dir (@dirsToRemove) {
-      rmtree $dir;
+      if (-e $dir) {
+         rmtree $dir;
+      }
    }
-   if ($logfile) {
+   if ($logfile && $logfh) {
       close $logfh;
    }
 }
@@ -1040,6 +1051,153 @@ sub findDtaChanges {
 
    return \%result;
 
+}
+
+sub crawlDeviceForSongs {
+   my %shortnames;
+   my %songids;
+
+   open OUTFILE, ">crawl.csv" or die "can't open output file \"crawl.csv\": $!\n";
+   print OUTFILE "\"Short Name\"\t\"DTA Path\"\t\"Song ID\"\t\"Artist\"\t\"Song Name\"\n";
+
+   # make the connection to the ps3 ftp server.
+   # ##########################################################################
+   my $ftp = Net::FTP::Recursive->new(Host => $ip,
+        Port                               => $port,
+        Debug                              => ($verbose > 1 ? 1 : 0),
+        Timeout                            => $ftptimeout)
+        or die "Cannot connect to $ip: $@";
+
+   $ftp->login($user, $pass)
+        or die "Cannot login ", $ftp->message;
+
+   $ftp->binary()
+        or die "Cannot set mode to binary ", $ftp->message;
+
+   $ftp->cwd($devicebase)
+        or die "Cannot change working directory to $devicebase", $ftp->message;
+
+   # printdir($ftp);
+
+   # myprint NORMAL, "contents of " . ($ftp->pwd()) . "\n";
+   my @basefiles = grep !/^\.+$/, $ftp->ls();
+   foreach my $item (@basefiles) {
+      # myprint NORMAL, $item . "\n";
+      # each entry should represent a game
+      my $gamedir = $devicebase . $item . "/USRDIR";
+
+      if ($ftp->cwd($gamedir)) {
+         my @gamefiles = grep !/^\.+$/, $ftp->ls();
+         foreach my $gamefile (@gamefiles) {
+            #myprint NORMAL, $gamedir . "->" . $gamefile . "\n";
+
+            # each game can have multiple song toplevel dirs:
+            my $songtop = $gamedir . "/" . $gamefile . "/songs/";
+            my $dta = $gamedir . "/" . $gamefile . "/songs/songs.dta";
+
+            #my $origfile = File::Spec->catfile($abssongdir, SONGFILE . ORIGEXT);
+            if ($ftp->size($songtop)) {
+               # myprint NORMAL, "songtop exists\n";
+            }
+
+            if ($ftp->size($dta)) {
+               myprint NORMAL, "found DTA: " . $dta . "\n";
+
+               # "Short Name","DTA Path","Song ID","Artist","Song Name"
+               # "touchme","/dev_hdd0/game/BLUS30463/USRDIR/HMX06CE/songs/songs.dta","1010023","The Doors","Touch Me"
+
+               # fetch current songs.dta into a temp file.
+               my $songdta = mktemp($tmptemplate);
+               push @filesToRemove, $songdta;
+
+               myprint DEBUG, "songdta=$songdta\n";
+               my $found = 0;
+               $ftp->cwd($songtop)
+                    or die "Cannot change working directory to $songtop", $ftp->message;
+               for (my $tries = 0; $tries < 5 && $found == 0; $tries++) {
+                  if ($ftp->get(SONGFILE, $songdta)) {
+                     $found = 1;
+                  }
+                  else {
+                     myprint DEBUG, "tries=" . $tries . " Cannot get " . SONGFILE, $ftp->message;
+                  }
+               }
+               if ($found == 0) {
+                  $ftp->get(SONGFILE, $songdta)
+                       or die "Cannot get " . SONGFILE, $ftp->message;
+               }
+
+               my $songref = parseDTA($songdta);
+               my $numnew = @{$songref};
+
+               if (!$numnew) {
+                  myprint DEBUG, $dta . " has no songs!\n";
+
+               }
+               else {
+
+                  foreach my $song (@{$songref}) {
+                     my $shortname = $song->{"shortname"};
+                     my $songid = $song->{"song_id"};
+                     my $artist = $song->{"artist"};
+                     my $songname = $song->{"songname"};
+                     if (!$shortname) {
+                        myprint DEBUG, $dta . " missing shortname\n";
+                     }
+                     elsif (!$songid) {
+                        myprint DEBUG, $dta . " missing songid\n";
+                     }
+                     elsif (!$artist) {
+                        myprint DEBUG, $dta . " missing artist\n";
+                     }
+                     elsif (!$songname) {
+                        myprint DEBUG, $dta . " missing songname\n";
+                     }
+                     else {
+                        if ($shortnames{$shortname}) {
+                           myprint NORMAL, "ERROR: found duplicate shortname! " . $shortname . "\n";
+                        }
+                        if ($songids{$songid}) {
+                           myprint NORMAL, "ERROR: found duplicate songid! " . $songid . "\n";
+                        }
+                        $shortnames{$shortname}++;
+                        $songids{$songid}++;
+                        print OUTFILE "\"" . $shortname . "\"\t\"" . $dta . "\"\t\"" . $songid . "\"\t" . $artist . "\t" . $songname . "\n";
+                        myprint NORMAL, "\"" . $shortname . "\"\t\"" . $dta . "\"\t\"" . $songid . "\"\t" . $artist . "\t" . $songname . "\n";
+                     }
+                  }
+               }
+            }
+
+            my $found = 0;
+            for (my $tries = 0; $tries < 5 && $found == 0; $tries++) {
+               if ($ftp->cwd($gamedir)) {
+                  $found = 1;
+               }
+               else {
+                  # on failure, the most likely cause is a disconect because the last parse took too long. try closing+restarting the ftp session
+                  $ftp->quit();
+
+                  $ftp->login($user, $pass)
+                       or die "Cannot login ", $ftp->message;
+
+                  $ftp->binary()
+                       or die "Cannot set mode to binary ", $ftp->message;
+
+                  myprint DEBUG, "tries=" . $tries . " Cannot get " . SONGFILE, $ftp->message;
+               }
+            }
+            if ($found == 0) {
+               $ftp->cwd($gamedir)
+                    or die "Cannot change working directory to $gamedir", $ftp->message;
+            }
+         }
+      }
+      else {
+         myprint NORMAL, "Cannot change working directory to $gamedir", $ftp->message;
+      }
+   }
+   close OUTFILE;
 }
 
 # short name.
