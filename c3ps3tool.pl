@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -19,6 +19,7 @@ use Text::Balanced qw(extract_bracketed);
 use Time::HiRes qw(usleep);
 use Encode;
 use Storable qw(dclone);
+use Data::Dumper;
 
 # constants/default values
 use constant VERSION => "0.2.0";
@@ -99,6 +100,21 @@ my $nummidi = 0;
 my $numdta = 0;
 my $configUpdated = 0;
 
+# precompiled regexes
+my $midi_file_pat = qr/^['"]?midi_file['"]?$/;
+my $song_id_pat = qr/^['"]?song_id['"]?$/;
+my $game_origin_pat = qr/^['"]?game_origin['"]?$/;
+my $artist_pat = qr/^['"]?artist['"]?$/;
+my $name_pat = qr/^['"]?name['"]?$/;
+my $rating_pat = qr/^['"]?rating['"]?$/;
+my $song_pat = qr/^['"]?song['"]?$/;
+my $vocal_parts_pat = qr/^['"]?vocal_parts['"]?$/;
+my $upgrade_version_pat = qr/^['"]?upgrade_version['"]?$/;
+my $non_numeric_pat = qr/\D+/;
+my $letter_or_number_pat = qr/^[a-zA-Z0-9]+$/;
+my $whitespace_pat = qr/^\s+$/;
+my $quoted_string_pat = qr/^['"][^'"]+['"]$/;
+
 # function prototypes
 sub myprint($@);
 sub findExistingSong($$);
@@ -126,7 +142,7 @@ GetOptions("custombase=s" => \$custombase,
      "ftpsleep=i"         => \$ftpsleep,
      "ftptimeout=i"       => \$ftptimeout,
      "c3config=s"         => \$c3config,
-     "cofigfile=s"        => \$configfile,
+     "configfile=s"       => \$configfile,
      "veryverbose"        => sub {$verbose = VERYVERBOSE;},
      "verbose|debug"      => sub {$verbose = DEBUG;},
      "quiet"              => sub {$verbose = QUIET;},
@@ -1483,28 +1499,18 @@ sub findBySongPath {
 
 # #############################################################################
 # dumpDTA
-#   - search for a particular song by name, returning the hashref for its
-#     contents if found and undef if not.
+#   - dump the details of a parsed dta file
 # #############################################################################
 sub dumpDTA {
    my $tree = shift;
 
    my $num = @{$tree};
-   myprint NORMAL, $num . " songs\n";
+   myprint NORMAL, "found " . $num . " songs\n";
    foreach my $child (@{$tree}) {
       myprint NORMAL, "shortname=\"" . $child->{"shortname"} . "\"\n";
       foreach my $key (sort {($a =~ /^_/ && $b =~ /^_/) ? $a cmp $b : $a =~ /^_/ ? 1 : $b =~ /^_/ ? -1 : $a cmp $b} keys %{$child}) {
-         if (($key ne "_raw") && ($key ne "_comment") && ($key ne "shortname")) {
+         if ($key ne "shortname") {
             myprint NORMAL, "$key=\"" . $child->{$key} . "\"\n";
-         }
-         elsif ($key ne "shortname") {
-            # unescape any delimiters within comments
-            my $song = $child->{$key};
-            $song =~ s/ESCAPEOPENBRACKET/\(/gs;
-            $song =~ s/ESCAPECLOSEBRACKET/\)/gs;
-            $song =~ s/ESCAPESINGLEQUOTE/'/gs;
-            $song =~ s/ESCAPEDOUBLEQUOTE/"/gs;
-            myprint NORMAL, "$key=\"" . $song . "\"\n";
          }
       }
    }
@@ -1524,19 +1530,10 @@ sub writeDTA {
       # if song had leading comment, write it
       if ($entry->{"_comment"}) {
          my $comment = $entry->{"_comment"};
-         $comment =~ s/ESCAPEOPENBRACKET/\(/gs;
-         $comment =~ s/ESCAPECLOSEBRACKET/\)/gs;
-         $comment =~ s/ESCAPESINGLEQUOTE/'/gs;
-         $comment =~ s/ESCAPEDOUBLEQUOTE/"/gs;
          print OUTFILE $comment;
       }
 
-      # unescape any delimiters within comments
       my $song = $entry->{"_raw"};
-      $song =~ s/ESCAPEOPENBRACKET/\(/gs;
-      $song =~ s/ESCAPECLOSEBRACKET/\)/gs;
-      $song =~ s/ESCAPESINGLEQUOTE/'/gs;
-      $song =~ s/ESCAPEDOUBLEQUOTE/"/gs;
       print OUTFILE $song . "\n";
    }
    close OUTFILE;
@@ -1559,7 +1556,7 @@ sub parseDTA {
       $fixErrors = 1;
    }
    if (not defined($isUpgrade)) {
-      if ($filename =~ /upgrades\.dta$/) {
+      if ($filename =~ /upgrades\.dta/) {
          $isUpgrade = 1;
       }
       else {
@@ -1567,75 +1564,30 @@ sub parseDTA {
       }
    }
 
-   # slurp up the input file, throwing away comments
-   open INFILE, "<:utf8", $filename or die "can't open input file \"$filename\": $!\n";
-   my $file_content = do {
+   # slurp up the input file. first try to parse as UTF-8, and if that fails, try ISO-8859-1.
+   open INFILE, "<", $filename or die "can't open input file \"$filename\": $!\n";
+   my $file_content_raw = do {
       local $/;
       <INFILE>
    };
-   $file_content =~ s/(\015\012?)/\012/gs;
-   $file_content =~ s/^\x{FEFF}//;
    close INFILE;
 
-   foreach my $line (split(/\n/, $file_content)) {
-      chomp $line;
+   my $file_content;
 
-      # If we find a comment, we need to give it some special handling. First
-      # split the line into a pre-comment part and the comment itself, then
-      # go through the comment and escape any delimiters with a leading
-      # backslash. later when print or dump the raw dta we'll un-escape these
-      # fields.
-      # -----------------------------------------------------------------------
-      if ($line =~ /([^;]*);(.*)/) {
-         # comments are annoying - they sometimes have typos and unbalanced
-         # brackets. escape brackets and quotes within the comment.
-         my $precom = $1;
-         my $com = $2;
-         $com =~ s/\(/ESCAPEOPENBRACKET/g;
-         $com =~ s/\)/ESCAPECLOSEBRACKET/g;
-         $com =~ s/'/ESCAPESINGLEQUOTE/g;
-         $com =~ s/"/ESCAPEDOUBLEQUOTE/g;
-         $s .= $precom . ";" . $com . "\n";
-      }
-      else {
-         $s .= $line . "\n";
-      }
+   eval {$file_content = decode("utf8", $file_content_raw, Encode::FB_CROAK)};
+
+   if ($@) { # input was not utf8
+      $file_content = decode("iso-8859-1", $file_content_raw, Encode::FB_WARN);
+   }
+   else {
+      $file_content =~ s/(\015\012?)/\012/gs;
+      $file_content =~ s/^\x{FEFF}//;
    }
 
    # returns an array of hash references, where each hash represents a single
    # song in the .dta file.
    # --------------------------------------------------------------------------
-   return parseDTAString($s, $filename, $isUpgrade, $fixErrors);
-}
-
-sub getTokens($) {
-   my $s = shift;
-   my $startcomment = "";
-
-   # extracts a set of bracket-balanced entries from the input. Since our input
-   # is a .dta file, each should represent a song.
-   my $expr = '(")';
-   my $pre = '[\s\n\r]*';
-   my ($token, $remainder) = extract_bracketed($s, $expr, $pre);
-
-   #   myprint DEBUG, "token=\"$token\"\n";
-   #   myprint DEBUG, "remainder=\"$remainder\"\n";
-
-   # check for a broken parse due to comments mixed in between entries.
-   # if we find token is empty, but remainder doesn't and starts with a
-   # comment, strip it out and reparse.
-   if (!$token && $remainder && ($remainder =~ /^\s*;+/gs)) {
-      #      myprint DEBUG, "comment outside song, save it\n";
-      $remainder =~ s/^([^;]+)//gs;
-      $remainder =~ s/^([^\(]+)//gs;
-      $startcomment = $1;
-      ($token, $remainder) = extract_bracketed($remainder, $expr, $pre);
-      #      myprint DEBUG, "startcomment=\"$startcomment\"\n";
-      #      myprint DEBUG, "token=\"$token\"\n";
-      #      myprint DEBUG, "remainder=\"$remainder\"\n";
-   }
-
-   return ($token, $remainder, $startcomment);
+   return parseDTAString(\$file_content, $filename, $isUpgrade, $fixErrors);
 }
 
 sub buildCloseName($$) {
@@ -1652,85 +1604,68 @@ sub buildCloseName($$) {
    return $closename;
 }
 
-# #############################################################################
-# parseDTAString
-#   - parses contents of given string, returning an array reference to a list
-#     of its songs.
-# #############################################################################
 sub parseDTAString {
-   my $s = shift;
+   my $raw_text = shift;
    my $filename = shift;
    my $isUpgrade = shift;
    my $fixErrors = shift;
+
+   my @list;
+   my $i = 0;
+   my $raw_song = "";
+   my $song_count = 0;
+   my $startcomment = "";
+
+   my %closenames;
+   my %songids;
+   my %songpaths;
+
+   my $len = length($$raw_text);
+   my @chars = split(//, $$raw_text);
 
    # returns an array of hash references, where each hash represents a single
    # song in the .dta file.
    # --------------------------------------------------------------------------
    my @retarray;
 
-   # for debugging, build simplified artist+song combos to find duplicates with
-   # different shortnames or paths
-   my %closenames;
-   my %songids;
-   my %songpaths;
+   my $r = $chars[$i];
+   while ($i < $len) {
 
-   #   myprint DEBUG, "tokenize...\n";
-
-   my ($token, $remainder, $startcomment) = getTokens($s);
-   #   myprint DEBUG, "startcomment=\"$startcomment\"\n";
-   #   myprint DEBUG, "token=\"$token\"\n";
-   #   myprint DEBUG, "remainder=\"$remainder\"\n";
-
-   while ($token) {
-      #      myprint DEBUG, "next iter\n";
-      #      myprint DEBUG, "token: \"$token\"\n";
-      if ($token =~ /^\(/) {
-         #         myprint DEBUG, "subtree\n";
-         my %tmphash;
-
-         # a top level block should start with an opening bracket, the name,
-         # and then the rest of the data. Pull out the name as our primary key,
-         # cache the rest in the _raw key, then pick out a few more interesting
-         # fields.
-         # --------------------------------------------------------------------
-         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!\.]+['"]?)\s*/s) {
-            $tmphash{"shortname"} = $1;
-            if ($tmphash{"shortname"} ne lc($tmphash{"shortname"})) {
-               if ($tmphash{"shortname"} =~ /^['"][^'"]+['"]$/) {
-                  #                  myprint DEBUG, "shortname " . $tmphash{"shortname"} . "is not lower case, but is quoted\n";
-               }
-               else {
-                  if ($fixErrors) {
-                     myprint DEBUG, "Warning: fixing non-lowercase shortname " . $tmphash{"shortname"} . " error\n";
-                     $token =~ s/^(\(\s*)([a-zA-Z0-9_\-!]+)(\s*)/$1\L$2\E$3/s;
-                     $tmphash{"shortname"} = lc($tmphash{"shortname"});
-                  }
-                  else {
-                     myprint DEBUG, "Warning: shortname " . $tmphash{"shortname"} . " is not lower case\n";
-                  }
-               }
+      # if we're in the outermost level of the file and don't see an open bracket, it's probably a comment that we can skip. we include comments within songs, but not outside.
+      while ((defined $r) && ($r ne "(") && ($i < $len)) {
+         if ($r eq ";") {
+            while ($r ne "\n" && $r ne "\r" && ($i < $len)) {
+               $startcomment .= $r;
+               $i++;
+               $r = $chars[$i];
             }
+            $startcomment .= $r;
          }
          else {
-            die "ERROR: missing shortname field in $filename\n";
+            $i++;
+            $r = $chars[$i];
          }
-         if ($token =~ /\(\s*['"]?midi_file['"]?\s+['"]?([^)'"]+)['"+]?\s*\)/s) {
-            $tmphash{"midi_file"} = $1;
+      }
+
+      if ($i < $len) {
+         my %c;
+         my @arr;
+         $c{'list'} = \@arr;
+         $c{'text'} = "";
+         my ($a, $b) = parseDTAStringSingle(\@chars, \@arr, $i, 0);
+         $raw_song = substr($$raw_text, $i, ($a - $i + 1));
+         $i = $a;
+         push @list, \%c;
+
+         my %tmphash = %{processSingle(\@arr, \$raw_song, $filename, $isUpgrade, $fixErrors)};
+
+         if ($startcomment) {
+            $tmphash{"_comment"} = $startcomment;
+            $startcomment = "";
          }
-         else {
-            if ($token =~ /midi_file/s) {
-               die "ERROR: midi_file half match in $filename\n";
-            }
-            else {
-               #               myprint DEBUG, "ERROR: missing midi_file field in $filename\n";
-            }
-         }
-         if ($token =~ /\(['"]?song_id['"]?\s+([a-zA-Z0-9_\-!]+)\s*\)/s) {
-            my $songid = $1;
-            $tmphash{"song_id"} = $songid;
-            if ($songid =~ /\D+/) {
-               myprint DEBUG, "Warning: song_id " . $songid . " is non-numeric\n";
-            }
+
+         my $songid = $tmphash{'song_id'};
+         if ($songid) {
             my $idmatch = $songids{$songid};
             if ($idmatch) {
                myprint NORMAL, "Warning: duplicate song_id found with $idmatch and $tmphash{'shortname'} while parsing dta\n";
@@ -1740,66 +1675,9 @@ sub parseDTAString {
                $songids{$songid} = $tmphash{'shortname'};
             }
          }
-         else {
-            if ($token =~ /song_id/s) {
-               die "ERROR: song_id half match in $filename\n";
-            }
-            else {
-               #               myprint DEBUG, "ERROR: missing song_id field in $filename\n";
-            }
-         }
-         if ($token =~ /\(\s*['"]?artist['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF\xC2\xB0'_\-!\.\&\?\/,\s\(\)\:\*\#\+~\$\\]+['"]?)\s*\)/s) {
-            $tmphash{"artist"} = $1;
-            myprint DEBUG, "found artist " . $tmphash{"artist"} . "\n";
-         }
-         else {
-            if (!$isUpgrade) {
-               myprint NORMAL, "ERROR: missing artist field in $filename\n";
-               myprint NORMAL, $token;
-            }
-            else {
-               myprint NORMAL, "missing artist field in upgrade $filename\n";
-            }
-         }
-         if ($token =~ /^\(\s*(['"]?[a-zA-Z0-9_\-!\.]+['"]?)\s+\(\s*['"]?name['"]?\s+(['"]?[a-zA-Z0-9\xD6\xF6\xFF\xDC\xFC\xC6\xE6\xEF\xC8\xE8\xC9\xE9\xCC\xEC\xCD\xED\xCF\xEF\xC2\xB0+'_\-!\.\&\?\/,\s\(\)\:\*\#\+~\$\\]+['"]?)\s*\)/s) {
-            $tmphash{"songname"} = $2;
-            myprint DEBUG, "found songname " . $tmphash{"songname"} . "\n";
-         }
-         else {
 
-            if (!$isUpgrade) {
-               myprint NORMAL, "ERROR: missing songname field in $filename\n";
-               myprint NORMAL, $token;
-            }
-            else {
-               myprint NORMAL, "missing songname field in upgrade $filename\n";
-            }
-         }
-         if ($token =~ /\(['"]?rating['"]?\s+([0-9]+)\s*\)/s) {
-            $tmphash{"rating"} = $1;
-            if ($tmphash{"rating"} < 1
-                 || $tmphash{"rating"} > 3) {
-               if ($fixErrors) {
-                  myprint DEBUG, "Warning: fixing rating " . $tmphash{"rating"} . " error\n";
-                  $token =~ s/(\(['"]?rating['"]?\s+)([0-9]+)(\s*\))/${1}1${3}/s;
-                  $tmphash{"rating"} = 1;
-               }
-               else {
-                  myprint DEBUG, "Warning: rating is " . $tmphash{"rating"} . "\n";
-               }
-            }
-         }
-         else {
-            if ($token =~ /rating/s) {
-               die "ERROR: rating half match in $filename\n";
-            }
-            else {
-               #               myprint DEBUG, "ERROR: missing rating field in $filename\n";
-            }
-         }
-         if ($token =~ /\(\s*['"]?song['"]?\s+\(\s*['"]?name['"]?\s+['"]?([a-zA-Z0-9_\-\/\.!]+)['"]?\s*\)/s) {
-            my $songpath = $1;
-            $tmphash{"song_path"} = $songpath;
+         my $songpath = $tmphash{"song_path"};
+         if (defined $songpath) {
             my $pathmatch = $songpaths{$songpath};
             if ($pathmatch) {
                myprint NORMAL, "Warning: duplicate song_path found with $pathmatch and $tmphash{'shortname'} while parsing dta\n";
@@ -1809,49 +1687,7 @@ sub parseDTAString {
                $songpaths{$songpath} = $tmphash{'shortname'};
             }
          }
-         elsif (!$isUpgrade) {
-            if ($token =~ /song/s
-                 && $token =~ /name/s) {
-               die "ERROR: song_path half match in $filename\n";
-            }
-            else {
-               die "ERROR: missing song_path field in $filename\n";
-            }
-         }
-         if ($token =~ /\(['"]?vocal_parts['"]?\s+([0-9]+)\s*\)/s) {
-            $tmphash{"vocal_parts"} = $1;
-         }
-         else {
-            if ($token =~ /vocal_parts/s) {
-               die "ERROR: vocal_parts half match in $filename\n";
-            }
-            else {
-               #               myprint DEBUG, "ERROR: missing vocal_parts field in $filename\n";
-            }
-         }
-         if ($token =~ /\(['"]?upgrade_version['"]?\s+([0-9]+)\s*\)/s) {
-            $tmphash{"upgrade_version"} = $1;
-         }
-         else {
-            if ($token =~ /upgrade_version/s) {
-               die "ERROR: upgrade_version half match in $filename\n";
-            }
-            elsif ($isUpgrade) {
-               die "ERROR: missing upgrade_version field in $filename\n";
-            }
-         }
-         $tmphash{"_comment"} = $startcomment;
-         $startcomment = "";
-         $tmphash{"_raw"} = $token;
-         #         myprint DEBUG, "name=$1\n";
-         if ($isUpgrade) {
-            if (!$tmphash{'artist'}) {
-               $tmphash{'artist'} = "upgrade";
-            }
-            if (!$tmphash{'songname'}) {
-               $tmphash{'songname'} = $tmphash{'shortname'};
-            }
-         }
+
          my $closename = buildCloseName($tmphash{'artist'}, $tmphash{'songname'});
          my $closematch = $closenames{$closename};
          if ($closematch) {
@@ -1863,25 +1699,376 @@ sub parseDTAString {
          }
          $tmphash{'closename'} = $closename;
 
+         $tmphash{'_raw'} = $raw_song;
+
+         # for debugging
+         # $tmphash{'parsed'} = \@arr;
+
          push @retarray, \%tmphash;
+
+         $song_count++;
+         myprint VERYVERBOSE, "  ** complete raw song $raw_song\n";
+         $raw_song = "";
+
+         $i++;
+         $r = $chars[$i];
       }
-      elsif ($token =~ /^\s+/gs) {
-         #         myprint DEBUG, "whitespace\n";
-         # ignore it
-      }
-      else {
-         # should be something stringy
-         #         $token =~ s/(\s+)$//gs;
-         die "shouldn't be here...$token\n";
-         #         Tree::Simple->new($token, $tree);
-      }
-      ($token, $remainder, $startcomment) = getTokens($remainder);
-      #      myprint DEBUG, "startcomment=\"$startcomment\"\n";
-      #      myprint DEBUG, "token=\"$token\"\n";
-      #      myprint DEBUG, "remainder=\"$remainder\"\n";
    }
 
+   myprint DEBUG, " ** song count $song_count\n";
+
    return \@retarray;
+}
+
+# this function is largely based on parseMetadata found in https://github.com/kueller/rbmanager/blob/master/src/confile.cpp
+#  as part of kueller's rbmanager project. Thanks for providing the blueprint that got me started on this!
+sub parseDTAStringSingle {
+   my $chars = shift;
+   my $list = shift;
+   my $i = shift;
+
+   my $len = @{$chars};
+
+   my $s = "";
+   my $read_active = 0;
+
+   my $r = @{$chars}[$i];
+   $i++;
+   $r = @{$chars}[$i];
+
+   while ($r ne ")" && ($i < $len)) {
+      if ($r eq "\'") {
+         $s = $s . $r;
+         $i++;
+         $r = @{$chars}[$i];
+         while ($i < $len) {
+            if ($r eq "\'") {
+               if (($len > ($i + 1)) && !(@{$chars}[$i + 1] =~ $letter_or_number_pat)) {
+                  last;
+               }
+               elsif ($len <= ($i + 1)) {
+                  last;
+               }
+            }
+            $s = $s . $r;
+
+            $i++;
+            $r = @{$chars}[$i];
+         }
+         $s = $s . $r;
+
+         my %c;
+         my @arr;
+         $c{'list'} = \@arr;
+         $c{'text'} = $s;
+         push @{$list}, \%c;
+         $s = "";
+      }
+      elsif ($r eq "\"") {
+         $s = $s . $r;
+         $i++;
+         $r = @{$chars}[$i];
+         while ($r ne "\"" && ($i < $len)) {
+            $s = $s . $r;
+
+            $i++;
+            $r = @{$chars}[$i];
+         }
+         $s = $s . $r;
+
+         my %c;
+         my @arr;
+         $c{'list'} = \@arr;
+         $c{'text'} = $s;
+         push @{$list}, \%c;
+         $s = "";
+      }
+      elsif ($r eq ";") {
+         while ($r ne "\n" && $r ne "\r" && ($i < $len)) {
+            $s = $s . $r;
+
+            $i++;
+            $r = @{$chars}[$i];
+         }
+
+         my %c;
+         my @arr;
+         $c{'list'} = \@arr;
+         $c{'text'} = $s;
+         push @{$list}, \%c;
+         $s = "";
+      }
+      elsif ($r eq "(") {
+         my %c;
+         my @arr;
+         $c{'list'} = \@arr;
+         $c{'text'} = "";
+         my ($a, $b) = parseDTAStringSingle($chars, \@arr, $i);
+         $i = $a;
+         push @{$list}, \%c;
+      }
+      elsif (!($r =~ $whitespace_pat) && !$read_active) {
+         $s = $s . $r;
+         $read_active = 1;
+      }
+      elsif (!($r =~ $whitespace_pat) && $read_active) {
+         $s = $s . $r;
+      }
+      elsif (($r =~ $whitespace_pat) && $read_active) {
+         my %c;
+         my @arr;
+         $c{'list'} = \@arr;
+         $c{'text'} = $s;
+         push @{$list}, \%c;
+         $s = "";
+         $read_active = 0;
+      }
+      $i++;
+      $r = @{$chars}[$i];
+   }
+
+   if ($read_active) {
+      my %c;
+      my @arr;
+      $c{'list'} = \@arr;
+      $c{'text'} = $s;
+      push @{$list}, \%c;
+   }
+
+   return ($i, $list);
+}
+
+sub processSingle {
+   my $obj = shift;
+   my $raw_song = shift;
+   my $filename = shift;
+   my $isUpgrade = shift;
+   my $fixErrors = shift;
+
+   # returns a hash represents a single  song in the .dta file.
+   # --------------------------------------------------------------------------
+   my %tmphash;
+
+   # myprint DEBUG, "parsed single =" . Dumper($obj) . "\n";
+   my @arr = @{$obj};
+   my $arr_len = @arr;
+
+   # shortname
+   # --------------------------------------------------------------------
+   if ($arr_len > 0) {
+      $tmphash{"shortname"} = $arr[0]->{"text"};
+      if ($tmphash{"shortname"} ne lc($tmphash{"shortname"})) {
+         if ($tmphash{"shortname"} =~ $quoted_string_pat) {
+            #                  myprint DEBUG, "shortname " . $tmphash{"shortname"} . "is not lower case, but is quoted\n";
+         }
+         else {
+            if ($fixErrors) {
+               myprint DEBUG, "Warning: fixing non-lowercase shortname " . $tmphash{"shortname"} . " error\n";
+               $$raw_song =~ s/^(\(\s*)([a-zA-Z0-9_\-!]+)(\s*)/$1\L$2\E$3/s;
+               $tmphash{"shortname"} = lc($tmphash{"shortname"});
+            }
+            else {
+               myprint DEBUG, "Warning: shortname " . $tmphash{"shortname"} . " is not lower case\n";
+            }
+         }
+      }
+   }
+   else {
+      die "ERROR: missing shortname field in $filename\n";
+   }
+
+   if ($arr_len > 1) {
+      for (my $i = 1; $i < $arr_len; $i++) {
+         my @inner = @{$arr[$i]->{"list"}};
+         my $key = @inner && $inner[0] ? $inner[0]->{"text"} : "";
+         my $value = (@inner > 0) && $inner[1] ? $inner[1]->{"text"} : "";
+
+         # midi_file
+         if ($key =~ $midi_file_pat) {
+            if (defined $value) {
+               $tmphash{"midi_file"} = $value;
+            }
+            else {
+               die "ERROR: midi_file half match in $filename\n";
+            }
+         }
+
+         # song_id
+         elsif ($key =~ $song_id_pat) {
+            if (defined $value) {
+               my $songid = $value;
+               if (defined $tmphash{"song_id"}) {
+                  myprint NORMAL, "existing song_id " . $tmphash{"song_id"} . " replaced by " . $songid . "\n";
+               }
+               $tmphash{"song_id"} = $songid;
+               if ($songid =~ $non_numeric_pat) {
+                  myprint DEBUG, "Warning: song_id " . $songid . " is non-numeric\n";
+               }
+            }
+            else {
+               myprint DEBUG, "key= $key, value=$value\n";
+               die "ERROR: song_id half match in $filename\n";
+            }
+         }
+
+         # game_origin
+         elsif ($key =~ $game_origin_pat) {
+            if (defined $value) {
+               $tmphash{"game_origin"} = $value;
+            }
+            else {
+               die "ERROR: game_origin half match in $filename\n";
+            }
+
+         }
+         # artist
+         elsif ($key =~ $artist_pat) {
+            if (defined $value) {
+               $tmphash{"artist"} = $value;
+               myprint DEBUG, "found artist " . $tmphash{"artist"} . "\n";
+            }
+            else {
+               die "ERROR: artist half match in $filename\n";
+            }
+         }
+
+         # name
+         elsif ($key =~ $name_pat) {
+            if (defined $value) {
+               $tmphash{"songname"} = $value;
+               myprint DEBUG, "found songname " . $tmphash{"songname"} . "\n";
+            }
+            else {
+               die "ERROR: name half match in $filename\n";
+            }
+         }
+
+
+         # rating
+         elsif ($key =~ $rating_pat) {
+            if (defined $value) {
+               $tmphash{"rating"} = $value;
+               if ($tmphash{"rating"} < 1 || $tmphash{"rating"} > 3) {
+                  if ($fixErrors) {
+                     myprint DEBUG, "Warning: fixing rating " . $tmphash{"rating"} . " error\n";
+                     $$raw_song =~ s/(\(['"]?rating['"]?\s+)([0-9]+)(\s*\))/${1}1${3}/s;
+                     $tmphash{"rating"} = 1;
+                  }
+                  else {
+                     myprint DEBUG, "Warning: rating is " . $tmphash{"rating"} . "\n";
+                  }
+               }
+            }
+            else {
+               die "ERROR: rating half match in $filename\n";
+            }
+         }
+
+         # song_path and vocal_parts extracted from one level deeper within "song"
+         elsif ($key =~ $song_pat) {
+            if (@inner > 0) {
+               for (my $j = 1; $j < @inner; $j++) {
+                  my $iinner = $inner[$j]->{list};
+                  # myprint DEBUG, "iinner= " . Dumper($iinner) . "\n";
+                  if (@{$iinner}) {
+                     my $key2 = @{$iinner}[0] ? @{$iinner}[0]->{"text"} : "";
+                     my $value2 = @{$iinner} > 0 && @{$iinner}[1] ? @{$iinner}[1]->{"text"} : "";
+
+                     # song_path
+                     if ($key2 =~ $name_pat) {
+                        if ($key2 =~ $name_pat && defined $value2) {
+                           my $songpath = $value2;
+                           $tmphash{"song_path"} = $songpath;
+                        }
+                        else {
+                           die "ERROR: song_path half match in $filename\n";
+                        }
+                     }
+
+                     # vocal_parts
+                     elsif ($key2 =~ $vocal_parts_pat) {
+                        if (defined $value2) {
+                           $tmphash{"vocal_parts"} = $value2;
+                        }
+                        else {
+                           myprint DEBUG, "iinner= " . Dumper($iinner) . "\n";
+                           die "ERROR: vocal_parts half match in $filename\n";
+                        }
+                     }
+                  }
+
+                  # if we've found both subkeys we're interested in, no reason to keep scanning this block
+                  if (defined $tmphash{"song_path"} && defined $tmphash{"vocal_parts"}) {
+                     last;
+                  }
+               }
+            }
+            else {
+               myprint NORMAL, Dumper(\@inner);
+               die "ERROR: song half match in $filename\n";
+            }
+         }
+
+         # upgrade_version
+         elsif ($key =~ $upgrade_version_pat) {
+            if (defined $value) {
+               $tmphash{"upgrade_version"} = $value;
+            }
+            else {
+               die "ERROR: upgrade_version half match in $filename\n";
+            }
+         }
+      }
+   }
+
+
+   # artist
+   if (!$tmphash{"artist"}) {
+      if ($tmphash{"game_origin"} && $tmphash{"game_origin"} eq "beatles") {
+         myprint DEBUG, "setting artist to beatles by origin\n";
+         $tmphash{"artist"} = "The Beatles";
+      }
+      elsif (!$isUpgrade) {
+         myprint NORMAL, "ERROR: missing artist field in $filename\n";
+      }
+      else {
+         myprint NORMAL, "missing artist field in upgrade $filename\n";
+      }
+   }
+
+   # name
+   if (!$tmphash{"songname"}) {
+      if (!$isUpgrade) {
+         myprint NORMAL, "ERROR: missing songname field in $filename\n";
+      }
+      else {
+         myprint NORMAL, "missing songname field in upgrade $filename\n";
+      }
+   }
+
+   # song_path is extracted from one level deeper within "song"
+   if (!$tmphash{"song_path"} && !$isUpgrade) {
+      die "ERROR: missing song_path field in $filename\n";
+   }
+
+   # upgrade_version
+   if (!$tmphash{"upgrade_version"} && $isUpgrade) {
+      die "ERROR: missing upgrade_version field in $filename\n";
+   }
+
+   #         myprint DEBUG, "name=$1\n";
+   if ($isUpgrade) {
+      if (!$tmphash{'artist'}) {
+         $tmphash{'artist'} = "upgrade";
+      }
+      if (!$tmphash{'songname'}) {
+         $tmphash{'songname'} = $tmphash{'shortname'};
+      }
+   }
+
+   $tmphash{'closename'} = buildCloseName($tmphash{'artist'}, $tmphash{'songname'});
+
+   return \%tmphash;
 }
 
 1;
@@ -1972,7 +2159,7 @@ FTP user on the Playstation. Default anonymous.
 
 =item C<--pass>
 
-FTP password on the Playstatoin. Default anonymous.
+FTP password on the Playstation. Default anonymous.
 
 =item C<--verbose>
 
