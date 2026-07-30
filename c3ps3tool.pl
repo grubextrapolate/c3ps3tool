@@ -84,6 +84,7 @@ my $nobackup = 0;
 my $reinstall = 0;
 my $remove = 0;
 my $readonly = 0;
+my $findOrphans = 0;
 my $ftpsleep = 100000; # microseconds, so = 100ms or 0.1s
 my $ftptimeout = 120;
 my $logfh;
@@ -155,6 +156,7 @@ GetOptions("devicebase=s" => \$devicebase,
      "reinstall"          => \$reinstall,
      "remove"             => \$remove,
      "readonly"           => \$readonly,
+     "orphans"            => \$findOrphans,
      "tmptemplate=s"      => \$tmptemplate,
      "search=s"           => \&setSearchPath,
      "logfile=s"          => \$logfile,
@@ -214,7 +216,12 @@ elsif ($mode eq ENCRYPT) {
    encryptFiles();
 }
 elsif ($mode eq CRAWL) {
-   crawlDeviceForSongs();
+   if ($findOrphans) {
+      crawlDeviceForOrphans();
+   }
+   else {
+      crawlDeviceForSongs();
+   }
 }
 else {
    die "unexpected mode!\n";
@@ -1450,6 +1457,102 @@ sub crawlDeviceForSongs {
    close OUTFILE;
 }
 
+sub crawlDeviceForOrphans {
+   my @orphans;
+
+   open OUTFILE, ">orphans.csv" or die "can't open output file \"crawl.csv\": $!\n";
+   print OUTFILE "\"Orphans\"\n";
+
+   # make the connection to the ps3 ftp server.
+   # ##########################################################################
+   my $ftp = Net::FTP::Recursive->new(Host => $ip,
+        Port                               => $port,
+        Debug                              => ($verbose > 1 ? 1 : 0),
+        Timeout                            => $ftptimeout)
+        or die "Cannot connect to $ip: $@";
+
+   $ftp->login($user, $pass)
+        or die "Cannot login ", $ftp->message;
+
+   $ftp->binary()
+        or die "Cannot set mode to binary ", $ftp->message;
+
+   # fetch current customs songs.dta into a temp file.
+   my $songdta = mktemp($tmptemplate);
+   push @filesToRemove, $songdta;
+
+   myprint DEBUG, "songdta=$songdta\n";
+   my $customdir = $custombase . SONGDIR;
+   $ftp->cwd($customdir)
+        or die "Cannot change working directory to $customdir", $ftp->message;
+   $ftp->get(SONGFILE, $songdta)
+        or die "Cannot get " . SONGFILE, $ftp->message;
+
+   my $existingsongref = parseDTA($songdta, 0, 0);
+   my $numexisting = @{$existingsongref};
+   myprint DEBUG, "existing custom dir has " . $numexisting . " songs\n";
+
+   if (!$numexisting) {
+      die "existing dta has no songs!\n";
+   }
+
+   # printdir($ftp);
+
+   # myprint NORMAL, "contents of " . ($ftp->pwd()) . "\n";
+   my @basefiles = grep !/^\.+$/, $ftp->ls();
+   my $dircount = scalar @basefiles;
+   my $orphancount = 0;
+   my $validcount = 0;
+   my $skipcount = 0;
+   myprint DEBUG, "directory has " . $dircount . " entries\n";
+   foreach my $item (@basefiles) {
+      # myprint NORMAL, $item . "\n";
+
+      # each entry should either be a songs.dta (or backup), the archive dir, or a song directory
+      if ($item eq ARCHIVEDIR) {
+         myprint DEBUG, "found archive directory $item\n";
+         $skipcount++;
+      }
+      elsif ($item =~ /^songs.dta/) {
+         myprint DEBUG, "found songs.dta or backup $item\n";
+         $skipcount++;
+      }
+      else {
+         myprint DEBUG, "found song directory $item\n";
+         my $songpath = "songs/" . $item . "/" . $item;
+
+         my $songpathmatches = findBySongPath($existingsongref, $songpath);
+
+         if (@{$songpathmatches}) {
+            myprint DEBUG, "found match for $songpath: \n";
+            $validcount++;
+         }
+         else {
+            myprint DEBUG, "found orphan $item\n";
+            my $orphan = $customdir . "/" . $item;
+            push @orphans, $orphan;
+            $orphancount++;
+
+            print OUTFILE $orphan . "\n";
+         }
+      }
+   }
+
+   if ($remove) {
+      foreach my $orphan (@orphans) {
+         myprint NORMAL, "removing " . $orphan . "\n";
+         if (!$readonly) {
+            $ftp->rmdir($orphan, 1)
+                 or die "Cannot remove " . $orphan, $ftp->message;
+            if ($ftpsleep) {usleep($ftpsleep);}
+         }
+      }
+   }
+
+   myprint NORMAL, "total=$dircount, valid=$validcount, skipped=$skipcount, orphans=$orphancount\n";
+   close OUTFILE;
+}
+
 # short name.
 # 
 # #############################################################################
@@ -1938,7 +2041,7 @@ sub findBySongPath {
    my $arref = shift;
    my $searchkey = shift;
 
-   my @results = grep {$_->{'song_path'} eq $searchkey} @{$arref};
+   my @results = grep {$_->{'song_path'} =~ /['"]?$searchkey['"]?/} @{$arref};
 
    return \@results;
 }
