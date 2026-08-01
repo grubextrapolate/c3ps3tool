@@ -36,6 +36,7 @@ use constant NONE => "NONE";
 use constant INSTALL => "INSTALL";
 use constant UPGRADE => "UPGRADE";
 use constant UNINSTALL => "UNINSTALL";
+use constant UNARCHIVE => "UNARCHIVE";
 use constant UNUPGRADE => "UNUPGRADE";
 use constant DTAPARSE => "DTAPARSE";
 use constant DTADIFF => "DTADIFF";
@@ -85,6 +86,7 @@ my $reinstall = 0;
 my $remove = 0;
 my $readonly = 0;
 my $findOrphans = 0;
+my $findArchived = 0;
 my $ftpsleep = 100000; # microseconds, so = 100ms or 0.1s
 my $ftptimeout = 120;
 my $logfh;
@@ -157,12 +159,14 @@ GetOptions("devicebase=s" => \$devicebase,
      "remove"             => \$remove,
      "readonly"           => \$readonly,
      "orphans"            => \$findOrphans,
+     "archived"           => \$findArchived,
      "tmptemplate=s"      => \$tmptemplate,
      "search=s"           => \&setSearchPath,
      "logfile=s"          => \$logfile,
      "install"            => sub {checkSetMode(INSTALL);},
      "upgrade"            => sub {checkSetMode(UPGRADE);},
      "uninstall"          => sub {checkSetMode(UNINSTALL);},
+     "unarchive"          => sub {checkSetMode(UNARCHIVE);},
      "unupgrade"          => sub {checkSetMode(UNUPGRADE);},
      "dtaparse"           => sub {checkSetMode(DTAPARSE);},
      "dtadiff"            => sub {checkSetMode(DTADIFF);},
@@ -204,7 +208,9 @@ elsif ($mode eq UNUPGRADE) {
 }
 elsif ($mode eq UNINSTALL) {
    uninstallFiles();
-   #die "uninstall not yet implimented.\n";
+}
+elsif ($mode eq UNARCHIVE) {
+   unarchiveFiles();
 }
 elsif ($mode eq DTAPARSE) {
    dtaparse();
@@ -226,7 +232,6 @@ elsif ($mode eq CRAWL) {
 else {
    die "unexpected mode!\n";
 }
-
 
 # this should always fire, even on a die, and clean up any temp files we
 # created.
@@ -953,7 +958,7 @@ sub uninstallFiles {
                }
                elsif ($key =~ /^(\d+)$/) {
                   my $result = $matches[$1 - 1];
-                  print("removing " . $result->{"Short Name"} . "\n");
+                  print("uninstalling " . $result->{"Short Name"} . "\n");
                   push @toRemove, $result;
                   $response = "q";
                }
@@ -990,7 +995,7 @@ sub uninstallFiles {
                $existingsongref = parseDTA($songdta, 0, 0);
             }
 
-            # likewise, read the dta for existing archive and cache it. if an archive deos not exist, one will be created.
+            # likewise, read the dta for existing archive and cache it. if an archive does not exist, one will be created.
             my $existingarchref;
             if ($parsedDtas{$archiveDtaPath}) {
                $existingarchref = $parsedDtas{$archiveDtaPath};
@@ -1077,7 +1082,7 @@ sub uninstallFiles {
 
          # if archive dir doesn't exist, create it
          my $archivedir = $basepath . "/" . ARCHIVEDIR;
-         myprint DEBUG, "archive dir is %archivedir\n";
+         myprint DEBUG, "archive dir is $archivedir\n";
 
          if (!doesFileExist($ftp, $archivedir)) {
             myprint NORMAL, "$archivedir does not exist and will be created\n";
@@ -1120,7 +1125,7 @@ sub uninstallFiles {
          # make backup of current songs.dta
          if (!$nobackup
               && doesFileExist($ftp, $dta)) {
-            myprint NORMAL, "backing up " . $dta . " to " . $dta . $backupext . "\n";
+            myprint DEBUG, "backing up " . $dta . " to " . $dta . $backupext . "\n";
             if (!$readonly) {
                ftpcopy($ftp, $dta, $dta . $backupext);
                if ($ftpsleep) {usleep($ftpsleep);}
@@ -1133,10 +1138,10 @@ sub uninstallFiles {
          my $songdta = mktemp($tmptemplate);
          push @filesToRemove, $songdta;
 
-         myprint NORMAL, "overwriting " . $songdta . "\n";
+         myprint DEBUG, "overwriting " . $songdta . "\n";
          writeDTA($existingsongref, $songdta);
 
-         myprint NORMAL, "uploading new " . $dta . "\n";
+         myprint DEBUG, "uploading new " . $dta . "\n";
          if (!$readonly) {
             #my $dtadir = $dta;
             #$dtadir =~ s/^(.+)\/songs.dta$/$1/;
@@ -1155,6 +1160,245 @@ sub uninstallFiles {
    return;
 }
 
+sub unarchiveFiles {
+
+   # make the connection to the ps3 ftp server.
+   # ##########################################################################
+   my $ftp = Net::FTP::Recursive->new(Host => $ip,
+        Port                               => $port,
+        Debug                              => ($verbose > 1 ? 1 : 0),
+        Timeout                            => $ftptimeout)
+        or die "Cannot connect to $ip: $@";
+
+   $ftp->login($user, $pass)
+        or die "Cannot login ", $ftp->message;
+
+   $ftp->binary()
+        or die "Cannot set mode to binary ", $ftp->message;
+
+   my $obj = Text::CSV::Hashify->new({ 'file' => $dtalist, 'format' => 'aoh', sep_char => "\t" },);
+   my $csv = $obj->all;
+
+   my %parsedDtas;
+   my %songsToUnarchive;
+   foreach my $searchkey (@ARGV) {
+      my @matches = @{searchForSong($csv, $searchkey)};
+      my $i = 1;
+      if (@matches) {
+         foreach my $match (@matches) {
+
+            # "Short Name"	"DTA Path"	"Song ID"	"Artist"	"Song Name"
+            myprint NORMAL, $i . ") " . $match->{"Artist"} . " - " . $match->{"Song Name"} . " / " . $match->{"Short Name"} . " / " . $match->{"DTA Path"} . "\n";
+
+            $i++;
+         }
+
+         my @toUnarchive;
+         my $response = "";
+         while (!($response =~ /^(q|Q)$/)) {
+            print "choose songs to unarchive [1-" . scalar(@matches) . "/q]: ";
+            $response = <STDIN>;
+            chomp $response;
+            foreach my $key (split(/\s+/, $response)) {
+               if ($key =~ /^(q|Q)$/) {
+                  print("Skipping " . $searchkey . "\n");
+               }
+               elsif ($key =~ /^(\d+)$/) {
+                  my $result = $matches[$1 - 1];
+                  print("unarchiving " . $result->{"Short Name"} . "\n");
+                  push @toUnarchive, $result;
+                  $response = "q";
+               }
+            }
+         }
+
+         foreach my $songToRemove (@toUnarchive) {
+            # we need to download the dta in order to sort out the install path for the song.
+            my $path = $songToRemove->{"DTA Path"};
+
+            # each song directory will have its own archive, and each archive will have its own dta for the archived songs.
+            my $unarchiveDtaPath = $path;
+            $unarchiveDtaPath =~ s/(${\ARCHIVEDIR}\/archive.dta)/songs.dta/;
+
+            myprint DEBUG, "dta path: $path / unarchive dta path $unarchiveDtaPath\n";
+
+            # read the dta with the song to unarchive. use cached dta if we've already seen it, otherwise download, parse, and cache.
+            my $existingsongref;
+            if ($parsedDtas{$path}) {
+               $existingsongref = $parsedDtas{$path};
+            }
+            else {
+
+               myprint DEBUG, "path before: " . $path . "\n";
+
+               # fetch current customs songs.dta into a temp file.
+               my $songdta = mktemp($tmptemplate);
+               push @filesToRemove, $songdta;
+
+               myprint DEBUG, "songdta=$songdta\n";
+               $ftp->get($path, $songdta)
+                    or die "Cannot get " . $path, $ftp->message;
+
+               $existingsongref = parseDTA($songdta, 0, 0);
+            }
+
+            # likewise, read the dta for existing songs and cache it.
+            my $existingunarchref;
+            if ($parsedDtas{$unarchiveDtaPath}) {
+               $existingunarchref = $parsedDtas{$unarchiveDtaPath};
+            }
+            else {
+
+               myprint DEBUG, "unarch path before: " . $unarchiveDtaPath . "\n";
+
+               # fetch current customs songs.dta into a temp file.
+               my $unarchdta = mktemp($tmptemplate);
+               push @filesToRemove, $unarchdta;
+
+               myprint DEBUG, "unarchdta=$unarchdta\n";
+               $ftp->get($unarchiveDtaPath, $unarchdta)
+                    or die "Cannot get " . $unarchiveDtaPath, $ftp->message;
+               $existingunarchref = parseDTA($unarchdta, 0, 0);
+            }
+
+            # my $beforeDta = dclone($existingsongref);
+            my $numexisting = @{$existingsongref};
+            myprint DEBUG, "existing custom dir has " . $numexisting . " songs\n";
+
+            if (!$numexisting) {
+               die "existing dta has no songs!\n";
+            }
+
+            my $song = findkey($existingsongref, $songToRemove->{'Short Name'})
+                 or die "could not find song $songToRemove->{'Short Name'} in $existingsongref!\n";
+
+            myprint DEBUG, "short=" . $song->{'shortname'} . " songpath=" . $song->{'song_path'} . "\n";
+            my $songdir = $song->{'song_path'};
+            $songdir =~ s/^['"]?songs\///;
+            $songdir =~ s/^([^\/]+)\/(.+)['"]?$/$1/;
+            my $endpart = $2;
+            myprint DEBUG, "songdir=" . $songdir . " endpart=" . $endpart . "\n";
+
+            my $basepath = $path;
+            $basepath =~ s/(.+)\/archive.dta/$1/;
+            my $songpath = $basepath . "/" . $songdir;
+            myprint DEBUG, "songpath=" . $songpath . "\n";
+
+            # for each basepath, we need to track which songs are being archived and preserve their stub dta
+            my $unarchive = $songsToUnarchive{$basepath};
+            if (!$unarchive) {
+               $unarchive = {};
+               $songsToUnarchive{$basepath} = $unarchive;
+            }
+            my %tmp;
+            $tmp{'songpath'} = $songpath;
+            $tmp{'songdir'} = $songdir;
+            $unarchive->{$song->{"shortname"}} = \%tmp;
+
+            # add the newly unarchived song to the unarchive dta. if the --remove option was given, we can skip this.
+            if (!$remove) {
+               push @{$existingunarchref}, $song;
+
+               # save the updated dta to the dta cache so we only have to parse each once.
+               $parsedDtas{$unarchiveDtaPath} = $existingunarchref;
+            }
+
+            # cut the song out of the dta.
+            # TODO: if the dta is now empty, should we remove it entirely?
+            @{$existingsongref} = grep {$_->{'shortname'} ne $song->{'shortname'}} @{$existingsongref};
+
+            # save the updated dta to the dta cache so we only have to parse each once.
+            $parsedDtas{$path} = $existingsongref;
+         }
+      }
+      else {
+         myprint NORMAL, "No match found for search string \"" . $searchkey . "\"\n";
+      }
+   }
+
+   if (%songsToUnarchive) {
+
+      foreach my $basepath (keys %songsToUnarchive) {
+         # within this basepath, we have at least one song to unarchive
+         my $pathSongs = $songsToUnarchive{$basepath};
+
+         # if archive dir doesn't exist, something is very wrong as the archive should be a subdir of it
+         myprint DEBUG, "basepath is $basepath\n";
+         my $unarchivedir = $basepath;
+         $unarchivedir =~ s/\/${\ARCHIVEDIR}//;
+         myprint DEBUG, "unarchive dir is $unarchivedir\n";
+
+         if (!doesFileExist($ftp, $unarchivedir)) {
+            die "unarchive directory does not exist! $unarchivedir! ";
+         }
+
+         foreach my $shortname (keys %{$pathSongs}) {
+            my $songpath = $pathSongs->{$shortname}->{"songpath"};
+            my $songdir = $pathSongs->{$shortname}->{"songdir"};
+
+            # by default, we'll move songs to the archive directory, unless the --remove option was specified.
+            if ($remove) {
+               myprint NORMAL, "removing " . $songpath . "\n";
+               if (!$readonly) {
+                  $ftp->rmdir($songpath, 1)
+                       or die "Cannot remove " . $songpath, $ftp->message;
+                  if ($ftpsleep) {usleep($ftpsleep);}
+               }
+            }
+            else {
+               my $newpath = $unarchivedir . "/" . $songdir;
+               myprint NORMAL, "unarchiving " . $songpath . " to " . $newpath . "\n";
+               if (!$readonly) {
+                  $ftp->rename($songpath, $newpath)
+                       or die "Cannot put " . $newpath, $ftp->message;
+                  if ($ftpsleep) {usleep($ftpsleep);}
+               }
+            }
+         }
+      }
+
+      foreach my $dta (keys %parsedDtas) {
+         my $existingsongref = $parsedDtas{$dta};
+
+         myprint DEBUG, "processing $dta\n";
+
+         # make backup of current songs.dta
+         if (!$nobackup
+              && doesFileExist($ftp, $dta)) {
+            myprint DEBUG, "backing up " . $dta . " to " . $dta . $backupext . "\n";
+            if (!$readonly) {
+               ftpcopy($ftp, $dta, $dta . $backupext);
+               if ($ftpsleep) {usleep($ftpsleep);}
+            }
+         }
+
+         my $numexisting = @{$existingsongref};
+         myprint DEBUG, "updated dta has " . $numexisting . " songs\n";
+
+         my $songdta = mktemp($tmptemplate);
+         push @filesToRemove, $songdta;
+
+         myprint DEBUG, "overwriting " . $songdta . "\n";
+         writeDTA($existingsongref, $songdta);
+
+         myprint DEBUG, "uploading new " . $dta . "\n";
+         if (!$readonly) {
+            #my $dtadir = $dta;
+            #$dtadir =~ s/^(.+)\/songs.dta$/$1/;
+            #$ftp->cwd($dtadir)
+            #     or die "Cannot change working directory to $dtadir", $ftp->message;
+            #if ($ftpsleep) {usleep($ftpsleep);}
+
+            $ftp->put($songdta, $dta)
+                 or die "Cannot put " . $dta, $ftp->message;
+         }
+         if ($ftpsleep) {usleep($ftpsleep);}
+
+      }
+   }
+
+   return;
+}
 
 # short name.
 # 
@@ -1314,7 +1558,8 @@ sub crawlDeviceForSongs {
    my %shortnames;
    my %songids;
 
-   open OUTFILE, ">crawl.csv" or die "can't open output file \"crawl.csv\": $!\n";
+   my $outfilename = $findArchived ? "archived.csv" : "crawl.csv";
+   open OUTFILE, ">$outfilename" or die "can't open output file \"$outfilename\": $!\n";
    print OUTFILE "\"Short Name\"\t\"DTA Path\"\t\"Song ID\"\t\"Artist\"\t\"Song Name\"\n";
 
    # make the connection to the ps3 ftp server.
@@ -1349,8 +1594,9 @@ sub crawlDeviceForSongs {
             #myprint NORMAL, $gamedir . "->" . $gamefile . "\n";
 
             # each game can have multiple song toplevel dirs:
-            my $songtop = $gamedir . "/" . $gamefile . "/songs/";
-            my $dta = $gamedir . "/" . $gamefile . "/songs/songs.dta";
+            my $songtop = $gamedir . "/" . $gamefile . "/songs/" . ($findArchived ? ARCHIVEDIR . "/" : "");
+            my $dtafilename = ($findArchived ? "archive.dta" : "songs.dta");
+            my $dta = $songtop . $dtafilename;
 
             #my $origfile = File::Spec->catfile($abssongdir, SONGFILE . ORIGEXT);
             if ($ftp->size($songtop)) {
@@ -1372,16 +1618,16 @@ sub crawlDeviceForSongs {
                $ftp->cwd($songtop)
                     or die "Cannot change working directory to $songtop", $ftp->message;
                for (my $tries = 0; $tries < 5 && $found == 0; $tries++) {
-                  if ($ftp->get(SONGFILE, $songdta)) {
+                  if ($ftp->get($dtafilename, $songdta)) {
                      $found = 1;
                   }
                   else {
-                     myprint DEBUG, "tries=" . $tries . " Cannot get " . SONGFILE, $ftp->message;
+                     myprint DEBUG, "tries=" . $tries . " Cannot get " . $dtafilename, $ftp->message;
                   }
                }
                if ($found == 0) {
-                  $ftp->get(SONGFILE, $songdta)
-                       or die "Cannot get " . SONGFILE, $ftp->message;
+                  $ftp->get($dtafilename, $songdta)
+                       or die "Cannot get " . $dtafilename, $ftp->message;
                }
 
                my $songref = parseDTA($songdta);
